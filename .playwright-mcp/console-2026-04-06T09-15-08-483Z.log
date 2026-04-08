@@ -1,0 +1,2 @@
+[    6592ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://fonts.gstatic.com/s/raleway/v37/1Ptug8zYS_SKggPNyC0IT4ttDfA.woff2 @ https://quotes.toscrape.com/:0
+[    7235ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://quotes.toscrape.com/favicon.ico:0

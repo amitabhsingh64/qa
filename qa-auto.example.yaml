@@ -1,0 +1,31 @@
+target:
+  url: "https://staging.myapp.com"
+  prd: ""                          # optional: path to requirements/PRD file
+  auth_cookie: ""                  # optional: session cookie for authenticated testing
+  exclude_paths: []                # e.g. ["/admin", "/internal"]
+
+browser:
+  engine: chromium                 # chromium | firefox | webkit
+  headless: true
+  viewports: ["1920x1080"]        # add "768x1024", "375x812" for responsive
+
+models:
+  primary: gemini-2.5-pro          # orchestrator + all agents
+
+budget:
+  max_per_session: 10.00           # USD, abort gracefully at limit
+
+# Optional MCP integrations
+grafana:
+  enabled: false
+  url: ""
+  token: ""                        # or use env var GRAFANA_TOKEN
+  read_only: true
+
+sentry:
+  enabled: false
+  org: ""
+  project: ""
+
+reporting:
+  formats: [json, markdown]

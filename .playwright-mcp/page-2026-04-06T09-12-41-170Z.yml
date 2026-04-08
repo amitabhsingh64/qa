@@ -1,0 +1,188 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e5]:
+      - link "Books to Scrape" [ref=e6] [cursor=pointer]:
+        - /url: ../../index.html
+      - text: We love being scraped!
+  - generic [ref=e8]:
+    - list [ref=e9]:
+      - listitem [ref=e10]:
+        - link "Home" [ref=e11] [cursor=pointer]:
+          - /url: ../../index.html
+      - listitem [ref=e12]:
+        - text: /
+        - link "Books" [ref=e13] [cursor=pointer]:
+          - /url: ../category/books_1/index.html
+      - listitem [ref=e14]:
+        - text: /
+        - link "Travel" [ref=e15] [cursor=pointer]:
+          - /url: ../category/books/travel_2/index.html
+      - listitem [ref=e16]: / It's Only the Himalayas
+    - article [ref=e19]:
+      - generic [ref=e20]:
+        - img "It's Only the Himalayas" [ref=e26]
+        - generic [ref=e27]:
+          - heading "It's Only the Himalayas" [level=1] [ref=e28]
+          - paragraph [ref=e29]: £45.17
+          - paragraph [ref=e30]:
+            - generic [ref=e31]: 
+            - text: In stock (19 available)
+          - paragraph [ref=e32]:
+            - generic [ref=e33]: 
+            - generic [ref=e34]: 
+            - generic [ref=e35]: 
+            - generic [ref=e36]: 
+            - generic [ref=e37]: 
+          - separator [ref=e38]
+          - alert [ref=e39]:
+            - strong [ref=e40]: Warning!
+            - text: This is a demo website for web scraping purposes. Prices and ratings here were randomly assigned and have no real meaning.
+      - heading "Product Description" [level=2] [ref=e42]
+      - paragraph [ref=e43]: “Wherever you go, whatever you do, just . . . don’t do anything stupid.” —My MotherDuring her yearlong adventure backpacking from South Africa to Singapore, S. Bedford definitely did a few things her mother might classify as "stupid." She swam with great white sharks in South Africa, ran from lions in Zimbabwe, climbed a Himalayan mountain without training in Nepal, and wa “Wherever you go, whatever you do, just . . . don’t do anything stupid.” —My MotherDuring her yearlong adventure backpacking from South Africa to Singapore, S. Bedford definitely did a few things her mother might classify as "stupid." She swam with great white sharks in South Africa, ran from lions in Zimbabwe, climbed a Himalayan mountain without training in Nepal, and watched as her friend was attacked by a monkey in Indonesia.But interspersed in those slightly more crazy moments, Sue Bedfored and her friend "Sara the Stoic" experienced the sights, sounds, life, and culture of fifteen countries. Joined along the way by a few friends and their aging fathers here and there, Sue and Sara experience the trip of a lifetime. They fall in love with the world, cultivate an appreciation for home, and discover who, or what, they want to become.It's Only the Himalayas is the incredibly funny, sometimes outlandish, always entertaining confession of a young backpacker that will inspire you to take your own adventure. ...more
+      - heading "Product Information" [level=2] [ref=e45]
+      - table [ref=e46]:
+        - rowgroup [ref=e47]:
+          - row "UPC a22124811bfa8350" [ref=e48]:
+            - rowheader "UPC" [ref=e49]
+            - cell "a22124811bfa8350" [ref=e50]
+          - row "Product Type Books" [ref=e51]:
+            - rowheader "Product Type" [ref=e52]
+            - cell "Books" [ref=e53]
+          - row "Price (excl. tax) £45.17" [ref=e54]:
+            - rowheader "Price (excl. tax)" [ref=e55]
+            - cell "£45.17" [ref=e56]
+          - row "Price (incl. tax) £45.17" [ref=e57]:
+            - rowheader "Price (incl. tax)" [ref=e58]
+            - cell "£45.17" [ref=e59]
+          - row "Tax £0.00" [ref=e60]:
+            - rowheader "Tax" [ref=e61]
+            - cell "£0.00" [ref=e62]
+          - row "Availability In stock (19 available)" [ref=e63]:
+            - rowheader "Availability" [ref=e64]
+            - cell "In stock (19 available)" [ref=e65]
+          - row "Number of reviews 0" [ref=e66]:
+            - rowheader "Number of reviews" [ref=e67]
+            - cell "0" [ref=e68]
+      - heading "Products you recently viewed" [level=2] [ref=e72]
+      - list [ref=e73]:
+        - listitem [ref=e74]:
+          - article [ref=e75]:
+            - link "Libertarianism for Beginners" [ref=e77] [cursor=pointer]:
+              - /url: ../libertarianism-for-beginners_982/index.html
+              - img "Libertarianism for Beginners" [ref=e78]
+            - paragraph [ref=e79]:
+              - generic [ref=e80]: 
+              - generic [ref=e81]: 
+              - generic [ref=e82]: 
+              - generic [ref=e83]: 
+              - generic [ref=e84]: 
+            - heading "Libertarianism for Beginners" [level=3] [ref=e85]:
+              - link "Libertarianism for Beginners" [ref=e86] [cursor=pointer]:
+                - /url: ../libertarianism-for-beginners_982/index.html
+            - generic [ref=e87]:
+              - paragraph [ref=e88]: £51.33
+              - paragraph [ref=e89]:
+                - generic [ref=e90]: 
+                - text: In stock
+              - button "Add to basket" [ref=e92] [cursor=pointer]
+        - listitem [ref=e93]:
+          - article [ref=e94]:
+            - 'link "Mesaerion: The Best Science Fiction Stories 1800-1849" [ref=e96] [cursor=pointer]':
+              - /url: ../mesaerion-the-best-science-fiction-stories-1800-1849_983/index.html
+              - 'img "Mesaerion: The Best Science Fiction Stories 1800-1849" [ref=e97]'
+            - paragraph [ref=e98]:
+              - generic [ref=e99]: 
+              - generic [ref=e100]: 
+              - generic [ref=e101]: 
+              - generic [ref=e102]: 
+              - generic [ref=e103]: 
+            - 'heading "Mesaerion: The Best Science ..." [level=3] [ref=e104]':
+              - 'link "Mesaerion: The Best Science ..." [ref=e105] [cursor=pointer]':
+                - /url: ../mesaerion-the-best-science-fiction-stories-1800-1849_983/index.html
+            - generic [ref=e106]:
+              - paragraph [ref=e107]: £37.59
+              - paragraph [ref=e108]:
+                - generic [ref=e109]: 
+                - text: In stock
+              - button "Add to basket" [ref=e111] [cursor=pointer]
+        - listitem [ref=e112]:
+          - article [ref=e113]:
+            - link "Olio" [ref=e115] [cursor=pointer]:
+              - /url: ../olio_984/index.html
+              - img "Olio" [ref=e116]
+            - paragraph [ref=e117]:
+              - generic [ref=e118]: 
+              - generic [ref=e119]: 
+              - generic [ref=e120]: 
+              - generic [ref=e121]: 
+              - generic [ref=e122]: 
+            - heading "Olio" [level=3] [ref=e123]:
+              - link "Olio" [ref=e124] [cursor=pointer]:
+                - /url: ../olio_984/index.html
+            - generic [ref=e125]:
+              - paragraph [ref=e126]: £23.88
+              - paragraph [ref=e127]:
+                - generic [ref=e128]: 
+                - text: In stock
+              - button "Add to basket" [ref=e130] [cursor=pointer]
+        - listitem [ref=e131]:
+          - article [ref=e132]:
+            - 'link "Our Band Could Be Your Life: Scenes from the American Indie Underground, 1981-1991" [ref=e134] [cursor=pointer]':
+              - /url: ../our-band-could-be-your-life-scenes-from-the-american-indie-underground-1981-1991_985/index.html
+              - 'img "Our Band Could Be Your Life: Scenes from the American Indie Underground, 1981-1991" [ref=e135]'
+            - paragraph [ref=e136]:
+              - generic [ref=e137]: 
+              - generic [ref=e138]: 
+              - generic [ref=e139]: 
+              - generic [ref=e140]: 
+              - generic [ref=e141]: 
+            - heading "Our Band Could Be ..." [level=3] [ref=e142]:
+              - link "Our Band Could Be ..." [ref=e143] [cursor=pointer]:
+                - /url: ../our-band-could-be-your-life-scenes-from-the-american-indie-underground-1981-1991_985/index.html
+            - generic [ref=e144]:
+              - paragraph [ref=e145]: £57.25
+              - paragraph [ref=e146]:
+                - generic [ref=e147]: 
+                - text: In stock
+              - button "Add to basket" [ref=e149] [cursor=pointer]
+        - listitem [ref=e150]:
+          - article [ref=e151]:
+            - link "Rip it Up and Start Again" [ref=e153] [cursor=pointer]:
+              - /url: ../rip-it-up-and-start-again_986/index.html
+              - img "Rip it Up and Start Again" [ref=e154]
+            - paragraph [ref=e155]:
+              - generic [ref=e156]: 
+              - generic [ref=e157]: 
+              - generic [ref=e158]: 
+              - generic [ref=e159]: 
+              - generic [ref=e160]: 
+            - heading "Rip it Up and ..." [level=3] [ref=e161]:
+              - link "Rip it Up and ..." [ref=e162] [cursor=pointer]:
+                - /url: ../rip-it-up-and-start-again_986/index.html
+            - generic [ref=e163]:
+              - paragraph [ref=e164]: £35.02
+              - paragraph [ref=e165]:
+                - generic [ref=e166]: 
+                - text: In stock
+              - button "Add to basket" [ref=e168] [cursor=pointer]
+        - listitem [ref=e169]:
+          - article [ref=e170]:
+            - 'link "Scott Pilgrim''s Precious Little Life (Scott Pilgrim #1)" [ref=e172] [cursor=pointer]':
+              - /url: ../scott-pilgrims-precious-little-life-scott-pilgrim-1_987/index.html
+              - 'img "Scott Pilgrim''s Precious Little Life (Scott Pilgrim #1)" [ref=e173]'
+            - paragraph [ref=e174]:
+              - generic [ref=e175]: 
+              - generic [ref=e176]: 
+              - generic [ref=e177]: 
+              - generic [ref=e178]: 
+              - generic [ref=e179]: 
+            - heading "Scott Pilgrim's Precious Little ..." [level=3] [ref=e180]:
+              - link "Scott Pilgrim's Precious Little ..." [ref=e181] [cursor=pointer]:
+                - /url: ../scott-pilgrims-precious-little-life-scott-pilgrim-1_987/index.html
+            - generic [ref=e182]:
+              - paragraph [ref=e183]: £52.29
+              - paragraph [ref=e184]:
+                - generic [ref=e185]: 
+                - text: In stock
+              - button "Add to basket" [ref=e187] [cursor=pointer]
+  - contentinfo

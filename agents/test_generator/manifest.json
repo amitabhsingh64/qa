@@ -1,0 +1,12 @@
+{
+  "id": "test_generator",
+  "name": "Test Generator",
+  "version": "1.0.0",
+  "type": "generator",
+  "trigger": "on_demand",
+  "requires_tools": ["browser_snapshot"],
+  "model_tier": "sub",
+  "input_format": "mission_brief_markdown",
+  "output_format": "test_cases_json",
+  "description": "Generates structured test cases from site observations and PRD"
+}

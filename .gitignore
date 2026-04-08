@@ -1,0 +1,11 @@
+sessions/
+qa-auto.yaml
+site-models/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+dist/
+*.egg-info/
+.env

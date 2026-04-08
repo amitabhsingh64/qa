@@ -1,0 +1,219 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Quotes to Scrape" [level=1] [ref=e5]:
+        - link "Quotes to Scrape" [ref=e6] [cursor=pointer]:
+          - /url: /
+      - paragraph [ref=e8]:
+        - link "Logout" [ref=e9] [cursor=pointer]:
+          - /url: /logout
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]: “The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”
+          - generic [ref=e14]:
+            - text: by Albert Einstein
+            - link "(about)" [ref=e15] [cursor=pointer]:
+              - /url: /author/Albert-Einstein
+            - text: "-"
+            - link "(Goodreads page)" [ref=e16] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/9810.Albert_Einstein
+          - generic [ref=e17]:
+            - text: "Tags:"
+            - link "change" [ref=e18] [cursor=pointer]:
+              - /url: /tag/change/page/1/
+            - link "deep-thoughts" [ref=e19] [cursor=pointer]:
+              - /url: /tag/deep-thoughts/page/1/
+            - link "thinking" [ref=e20] [cursor=pointer]:
+              - /url: /tag/thinking/page/1/
+            - link "world" [ref=e21] [cursor=pointer]:
+              - /url: /tag/world/page/1/
+        - generic [ref=e22]:
+          - generic [ref=e23]: “It is our choices, Harry, that show what we truly are, far more than our abilities.”
+          - generic [ref=e24]:
+            - text: by J.K. Rowling
+            - link "(about)" [ref=e25] [cursor=pointer]:
+              - /url: /author/J-K-Rowling
+            - text: "-"
+            - link "(Goodreads page)" [ref=e26] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/1077326.J_K_Rowling
+          - generic [ref=e27]:
+            - text: "Tags:"
+            - link "abilities" [ref=e28] [cursor=pointer]:
+              - /url: /tag/abilities/page/1/
+            - link "choices" [ref=e29] [cursor=pointer]:
+              - /url: /tag/choices/page/1/
+        - generic [ref=e30]:
+          - generic [ref=e31]: “There are only two ways to live your life. One is as though nothing is a miracle. The other is as though everything is a miracle.”
+          - generic [ref=e32]:
+            - text: by Albert Einstein
+            - link "(about)" [ref=e33] [cursor=pointer]:
+              - /url: /author/Albert-Einstein
+            - text: "-"
+            - link "(Goodreads page)" [ref=e34] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/9810.Albert_Einstein
+          - generic [ref=e35]:
+            - text: "Tags:"
+            - link "inspirational" [ref=e36] [cursor=pointer]:
+              - /url: /tag/inspirational/page/1/
+            - link "life" [ref=e37] [cursor=pointer]:
+              - /url: /tag/life/page/1/
+            - link "live" [ref=e38] [cursor=pointer]:
+              - /url: /tag/live/page/1/
+            - link "miracle" [ref=e39] [cursor=pointer]:
+              - /url: /tag/miracle/page/1/
+            - link "miracles" [ref=e40] [cursor=pointer]:
+              - /url: /tag/miracles/page/1/
+        - generic [ref=e41]:
+          - generic [ref=e42]: “The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid.”
+          - generic [ref=e43]:
+            - text: by Jane Austen
+            - link "(about)" [ref=e44] [cursor=pointer]:
+              - /url: /author/Jane-Austen
+            - text: "-"
+            - link "(Goodreads page)" [ref=e45] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/1265.Jane_Austen
+          - generic [ref=e46]:
+            - text: "Tags:"
+            - link "aliteracy" [ref=e47] [cursor=pointer]:
+              - /url: /tag/aliteracy/page/1/
+            - link "books" [ref=e48] [cursor=pointer]:
+              - /url: /tag/books/page/1/
+            - link "classic" [ref=e49] [cursor=pointer]:
+              - /url: /tag/classic/page/1/
+            - link "humor" [ref=e50] [cursor=pointer]:
+              - /url: /tag/humor/page/1/
+        - generic [ref=e51]:
+          - generic [ref=e52]: “Imperfection is beauty, madness is genius and it's better to be absolutely ridiculous than absolutely boring.”
+          - generic [ref=e53]:
+            - text: by Marilyn Monroe
+            - link "(about)" [ref=e54] [cursor=pointer]:
+              - /url: /author/Marilyn-Monroe
+            - text: "-"
+            - link "(Goodreads page)" [ref=e55] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/82952.Marilyn_Monroe
+          - generic [ref=e56]:
+            - text: "Tags:"
+            - link "be-yourself" [ref=e57] [cursor=pointer]:
+              - /url: /tag/be-yourself/page/1/
+            - link "inspirational" [ref=e58] [cursor=pointer]:
+              - /url: /tag/inspirational/page/1/
+        - generic [ref=e59]:
+          - generic [ref=e60]: “Try not to become a man of success. Rather become a man of value.”
+          - generic [ref=e61]:
+            - text: by Albert Einstein
+            - link "(about)" [ref=e62] [cursor=pointer]:
+              - /url: /author/Albert-Einstein
+            - text: "-"
+            - link "(Goodreads page)" [ref=e63] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/9810.Albert_Einstein
+          - generic [ref=e64]:
+            - text: "Tags:"
+            - link "adulthood" [ref=e65] [cursor=pointer]:
+              - /url: /tag/adulthood/page/1/
+            - link "success" [ref=e66] [cursor=pointer]:
+              - /url: /tag/success/page/1/
+            - link "value" [ref=e67] [cursor=pointer]:
+              - /url: /tag/value/page/1/
+        - generic [ref=e68]:
+          - generic [ref=e69]: “It is better to be hated for what you are than to be loved for what you are not.”
+          - generic [ref=e70]:
+            - text: by André Gide
+            - link "(about)" [ref=e71] [cursor=pointer]:
+              - /url: /author/Andre-Gide
+            - text: "-"
+            - link "(Goodreads page)" [ref=e72] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/7617.Andr_Gide
+          - generic [ref=e73]:
+            - text: "Tags:"
+            - link "life" [ref=e74] [cursor=pointer]:
+              - /url: /tag/life/page/1/
+            - link "love" [ref=e75] [cursor=pointer]:
+              - /url: /tag/love/page/1/
+        - generic [ref=e76]:
+          - generic [ref=e77]: “I have not failed. I've just found 10,000 ways that won't work.”
+          - generic [ref=e78]:
+            - text: by Thomas A. Edison
+            - link "(about)" [ref=e79] [cursor=pointer]:
+              - /url: /author/Thomas-A-Edison
+            - text: "-"
+            - link "(Goodreads page)" [ref=e80] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/3091287.Thomas_A_Edison
+          - generic [ref=e81]:
+            - text: "Tags:"
+            - link "edison" [ref=e82] [cursor=pointer]:
+              - /url: /tag/edison/page/1/
+            - link "failure" [ref=e83] [cursor=pointer]:
+              - /url: /tag/failure/page/1/
+            - link "inspirational" [ref=e84] [cursor=pointer]:
+              - /url: /tag/inspirational/page/1/
+            - link "paraphrased" [ref=e85] [cursor=pointer]:
+              - /url: /tag/paraphrased/page/1/
+        - generic [ref=e86]:
+          - generic [ref=e87]: “A woman is like a tea bag; you never know how strong it is until it's in hot water.”
+          - generic [ref=e88]:
+            - text: by Eleanor Roosevelt
+            - link "(about)" [ref=e89] [cursor=pointer]:
+              - /url: /author/Eleanor-Roosevelt
+            - text: "-"
+            - link "(Goodreads page)" [ref=e90] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/44566.Eleanor_Roosevelt
+          - generic [ref=e91]:
+            - text: "Tags:"
+            - link "misattributed-eleanor-roosevelt" [ref=e92] [cursor=pointer]:
+              - /url: /tag/misattributed-eleanor-roosevelt/page/1/
+        - generic [ref=e93]:
+          - generic [ref=e94]: “A day without sunshine is like, you know, night.”
+          - generic [ref=e95]:
+            - text: by Steve Martin
+            - link "(about)" [ref=e96] [cursor=pointer]:
+              - /url: /author/Steve-Martin
+            - text: "-"
+            - link "(Goodreads page)" [ref=e97] [cursor=pointer]:
+              - /url: http://goodreads.com/author/show/7103.Steve_Martin
+          - generic [ref=e98]:
+            - text: "Tags:"
+            - link "humor" [ref=e99] [cursor=pointer]:
+              - /url: /tag/humor/page/1/
+            - link "obvious" [ref=e100] [cursor=pointer]:
+              - /url: /tag/obvious/page/1/
+            - link "simile" [ref=e101] [cursor=pointer]:
+              - /url: /tag/simile/page/1/
+        - navigation [ref=e102]:
+          - list [ref=e103]:
+            - listitem:
+              - link "Next" [ref=e104] [cursor=pointer]:
+                - /url: /page/2/
+                - text: Next →
+      - generic [ref=e105]:
+        - heading "Top Ten tags" [level=2] [ref=e106]
+        - link "love" [ref=e108] [cursor=pointer]:
+          - /url: /tag/love/
+        - link "inspirational" [ref=e110] [cursor=pointer]:
+          - /url: /tag/inspirational/
+        - link "life" [ref=e112] [cursor=pointer]:
+          - /url: /tag/life/
+        - link "humor" [ref=e114] [cursor=pointer]:
+          - /url: /tag/humor/
+        - link "books" [ref=e116] [cursor=pointer]:
+          - /url: /tag/books/
+        - link "reading" [ref=e118] [cursor=pointer]:
+          - /url: /tag/reading/
+        - link "friendship" [ref=e120] [cursor=pointer]:
+          - /url: /tag/friendship/
+        - link "friends" [ref=e122] [cursor=pointer]:
+          - /url: /tag/friends/
+        - link "truth" [ref=e124] [cursor=pointer]:
+          - /url: /tag/truth/
+        - link "simile" [ref=e126] [cursor=pointer]:
+          - /url: /tag/simile/
+  - contentinfo [ref=e127]:
+    - generic [ref=e128]:
+      - paragraph [ref=e129]:
+        - text: "Quotes by:"
+        - link "GoodReads.com" [ref=e130] [cursor=pointer]:
+          - /url: https://www.goodreads.com/quotes
+      - paragraph [ref=e131]:
+        - text: Made with ❤ by
+        - link "Zyte" [ref=e132] [cursor=pointer]:
+          - /url: https://www.zyte.com

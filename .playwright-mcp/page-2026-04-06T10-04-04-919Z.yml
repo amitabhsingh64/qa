@@ -1,0 +1,85 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - img [ref=e6]
+    - heading "Web Scraping Sandbox" [level=1] [ref=e7]
+  - generic [ref=e10]:
+    - heading "Books" [level=2] [ref=e11]
+    - paragraph [ref=e12]:
+      - text: A
+      - link "fictional bookstore" [ref=e13] [cursor=pointer]:
+        - /url: http://books.toscrape.com
+      - text: "that desperately wants to be scraped. It's a safe place for beginners learning web scraping and for developers validating their scraping technologies as well. Available at:"
+      - link "books.toscrape.com" [ref=e14] [cursor=pointer]:
+        - /url: http://books.toscrape.com
+    - link [ref=e16] [cursor=pointer]:
+      - /url: http://books.toscrape.com
+      - img [ref=e17]
+    - table [ref=e19]:
+      - rowgroup [ref=e20]:
+        - row "Details" [ref=e21]:
+          - columnheader "Details" [ref=e22]
+        - row "Amount of items 1000" [ref=e23]:
+          - cell "Amount of items" [ref=e24]
+          - cell "1000" [ref=e25]
+        - row "Pagination ✔" [ref=e26]:
+          - cell "Pagination" [ref=e27]
+          - cell "✔" [ref=e28]
+        - row "Items per page max 20" [ref=e29]:
+          - cell "Items per page" [ref=e30]
+          - cell "max 20" [ref=e31]
+        - row "Requires JavaScript ✘" [ref=e32]:
+          - cell "Requires JavaScript" [ref=e33]
+          - cell "✘" [ref=e34]
+  - generic [ref=e37]:
+    - heading "Quotes" [level=2] [ref=e38]
+    - paragraph [ref=e39]:
+      - link "A website" [ref=e40] [cursor=pointer]:
+        - /url: http://quotes.toscrape.com/
+      - text: that lists quotes from famous people. It has many endpoints showing the quotes in many different ways, each of them including new scraping challenges for you, as described below.
+    - link [ref=e42] [cursor=pointer]:
+      - /url: http://quotes.toscrape.com
+      - img [ref=e43]
+    - table [ref=e45]:
+      - rowgroup [ref=e46]:
+        - row "Endpoints" [ref=e47]:
+          - columnheader "Endpoints" [ref=e48]
+        - row "Default Microdata and pagination" [ref=e49]:
+          - cell "Default" [ref=e50]:
+            - link "Default" [ref=e51] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/
+          - cell "Microdata and pagination" [ref=e52]
+        - row "Scroll infinite scrolling pagination" [ref=e53]:
+          - cell "Scroll" [ref=e54]:
+            - link "Scroll" [ref=e55] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/scroll
+          - cell "infinite scrolling pagination" [ref=e56]
+        - row "JavaScript JavaScript generated content" [ref=e57]:
+          - cell "JavaScript" [ref=e58]:
+            - link "JavaScript" [ref=e59] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/js
+          - cell "JavaScript generated content" [ref=e60]
+        - row "Delayed Same as JavaScript but with a delay (?delay=10000)" [ref=e61]:
+          - cell "Delayed" [ref=e62]:
+            - link "Delayed" [ref=e63] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/js-delayed
+          - cell "Same as JavaScript but with a delay (?delay=10000)" [ref=e64]
+        - row "Tableful a table based messed-up layout" [ref=e65]:
+          - cell "Tableful" [ref=e66]:
+            - link "Tableful" [ref=e67] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/tableful
+          - cell "a table based messed-up layout" [ref=e68]
+        - row "Login login with CSRF token (any user/passwd works)" [ref=e69]:
+          - cell "Login" [ref=e70]:
+            - link "Login" [ref=e71] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/login
+          - cell "login with CSRF token (any user/passwd works)" [ref=e72]
+        - row "ViewState an AJAX based filter form with ViewStates" [ref=e73]:
+          - cell "ViewState" [ref=e74]:
+            - link "ViewState" [ref=e75] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/search.aspx
+          - cell "an AJAX based filter form with ViewStates" [ref=e76]
+        - row "Random a single random quote" [ref=e77]:
+          - cell "Random" [ref=e78]:
+            - link "Random" [ref=e79] [cursor=pointer]:
+              - /url: http://quotes.toscrape.com/random
+          - cell "a single random quote" [ref=e80]

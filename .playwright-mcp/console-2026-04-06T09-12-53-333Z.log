@@ -1,0 +1,3 @@
+[    1212ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://quotes.toscrape.com/login:0
+[    1506ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://fonts.gstatic.com/s/raleway/v37/1Ptug8zYS_SKggPNyC0IT4ttDfA.woff2 @ http://quotes.toscrape.com/login:0
+[    1994ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ http://quotes.toscrape.com/favicon.ico:0
