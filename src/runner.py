@@ -358,6 +358,22 @@ async def run_qa_loop(
 
                     sub_agent_results[agent_id] = result_text
 
+                    # After verifier completes, append the invocation telemetry
+                    # snapshot to the tool result so the orchestrator has it
+                    # available when composing the report_generator mission brief.
+                    if agent_id == "verifier":
+                        telemetry_note = (
+                            "\n\n---\n"
+                            "## Session telemetry (for report_generator mission brief)\n\n"
+                            "Include the following two fields verbatim when writing "
+                            "the report_generator mission brief.\n\n"
+                            "### Agent Invocations\n"
+                            f"```json\n{json.dumps(token_usage.get_invocations(), indent=2)}\n```\n\n"
+                            "### Retry Summary\n"
+                            f"```json\n{json.dumps(token_usage.compute_retry_summary(), indent=2)}\n```"
+                        )
+                        result_text = result_text + telemetry_note
+
                     if verbose:
                         print(f"  ← [{agent_id}] done ({len(result_text)} chars)\n")
 

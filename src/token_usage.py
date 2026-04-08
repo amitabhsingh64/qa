@@ -215,6 +215,49 @@ class TokenUsage:
     # Serialisation
     # ------------------------------------------------------------------
 
+    def compute_retry_summary(self) -> dict:
+        """
+        Derive a session-level retry rollup from agent_invocations.
+
+        Pure derivation — no new state. Call at session end when finalising
+        cost.json. The result is informational only; nothing in the control
+        flow depends on it.
+        """
+        invocations = self._invocations
+
+        attempts_by_agent: dict[str, int] = {}
+        capped = errored = completed = 0
+
+        for inv in invocations:
+            aid = inv["agent_id"]
+            attempts_by_agent[aid] = attempts_by_agent.get(aid, 0) + 1
+
+            status = inv.get("status", "")
+            if status == "capped":
+                capped += 1
+            elif status == "error":
+                errored += 1
+            elif status == "complete":
+                completed += 1
+
+        total_retries = sum(
+            1 for inv in invocations if inv.get("attempt", 1) > 1
+        )
+        agents_with_retries = sorted(
+            aid for aid, count in attempts_by_agent.items() if count > 1
+        )
+
+        return {
+            "total_invocations":       len(invocations),
+            "total_unique_agents":     len(attempts_by_agent),
+            "total_retries":           total_retries,
+            "agents_with_retries":     agents_with_retries,
+            "max_attempts_for_any_agent": max(attempts_by_agent.values(), default=0),
+            "capped_count":            capped,
+            "errored_count":           errored,
+            "completed_count":         completed,
+        }
+
     def to_dict(self) -> dict:
         breakdown_with_cost = {
             aid: {
@@ -235,5 +278,6 @@ class TokenUsage:
                 "output_per_M_usd": self._cost_per_m_output,
             },
             "breakdown_by_agent":  breakdown_with_cost,
+            "retry_summary":       self.compute_retry_summary(),
             "agent_invocations":   self._invocations,
         }

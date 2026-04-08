@@ -172,6 +172,12 @@ Generate a QA report from these verified findings.
 - Duration: {duration}
 - Model: {model}
 
+## Agent Invocations
+{Full agent_invocations array from token_usage.to_dict()}
+
+## Retry Summary
+{retry_summary object from token_usage.to_dict()}
+
 ## Expected Output
 Return the report in this exact format — HTML first, then the marker, then markdown:
 
@@ -216,6 +222,62 @@ Rules for writing the retry context:
 
 ---
 
+## Handling capped and incomplete sub-agent results
+
+When a sub-agent returns a result with `"status": "capped"`, the agent did not
+finish all its work. You must decide what to do next.
+
+### Step 1: Read the capped summary carefully
+
+Look at `completed` (what was finished), `skipped` (what was missed),
+`in_progress` (what was abandoned), and `narrative` (the agent's explanation).
+Understand the gap before deciding to retry.
+
+### Step 2: Check the retry budget
+
+Count how many times you have already invoked this agent in the session. The
+hard limits are **3 attempts per agent** and **5 total retries per session**.
+If retrying would exceed either limit, do not retry — accept the partial result
+and document the gap.
+
+### Step 3: Decide whether to retry
+
+Retry only if **all** of these are true:
+
+- The skipped items are important (critical user flows, not low-priority pages)
+- The previous attempt actually completed some work (zero-progress retries usually fail again)
+- You have budget remaining
+- A focused retry on just the skipped items has a reasonable chance of success
+
+Do **not** retry if:
+
+- The previous attempt completed nothing
+- The skipped items are low priority
+- You have already retried this agent 2 times
+- The session has fewer than 1 retry remaining in its budget (save it for emergencies)
+
+### Step 4: If retrying, write a focused retry mission brief
+
+A retry brief must be different from the original brief. Include:
+
+- A `## Retry context` section listing the previous `invocation_id` and the
+  specific items you want addressed
+- Only the items that were skipped — do not include items already completed
+- The previous `narrative` as background context
+- Tighter scope than the original brief (fewer items, less ambitious)
+
+Do not retry with the original brief unchanged. A retry with the same brief
+will produce the same cap.
+
+### Step 5: If not retrying, document the gap
+
+In your final message before invoking the report generator, include a
+`## Coverage gaps` section listing what was not completed and why. The report
+generator will surface this in the final report so users know about the partial
+coverage.
+
+---
+
 ## Sub-Agent Result Status
 
 Every sub-agent result includes a `status` field. You must check this before
@@ -249,7 +311,10 @@ continue to the next phase with whatever data you already have.
 ## Rules
 
 1. Always run Phase 1 before Phase 2 — test_generator needs the site_map
-2. Pass the complete output of each sub-agent into the next sub-agent's mission_brief
-3. Do not summarise or truncate sub-agent outputs when passing them forward
-4. After report_generator returns, output `QA_SESSION_COMPLETE` and stop
-5. Always check the `status` field of each sub-agent result before proceeding
+2. Before invoking any sub-agent, check the session state to see if it has already
+   been invoked this session. Do not re-invoke an agent that has already returned a
+   complete result — this wastes budget and produces duplicate work.
+3. Pass the complete output of each sub-agent into the next sub-agent's mission_brief
+4. Do not summarise or truncate sub-agent outputs when passing them forward
+5. After report_generator returns, output `QA_SESSION_COMPLETE` and stop
+6. Always check the `status` field of each sub-agent result before proceeding
