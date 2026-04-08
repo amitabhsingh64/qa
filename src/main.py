@@ -116,7 +116,6 @@ async def main(
     # Initialise Bedrock client
     # ------------------------------------------------------------------
     from src.runner import run_qa_loop
-    from src.report import extract_findings_from_text, generate_markdown_report
     from src.token_usage import TokenUsage
 
     try:
@@ -160,7 +159,7 @@ async def main(
                 print("MCP session ready.")
                 print()
 
-                final_text, conversation_log = await run_qa_loop(
+                final_text, conversation_log, sub_agent_results = await run_qa_loop(
                     url=url,
                     prd_content=prd_content,
                     mcp_session=mcp_session,
@@ -197,34 +196,57 @@ async def main(
     end_time = datetime.now(timezone.utc)
 
     # ------------------------------------------------------------------
-    # Parse findings and write output files
+    # Write output files from sub-agent results
     # ------------------------------------------------------------------
-    findings_data = extract_findings_from_text(final_text)
-    summary = findings_data.get("summary", {})
-    findings = findings_data.get("findings", [])
-
     print()
     print("Writing output files...")
 
-    report_md = generate_markdown_report(
-        url=url,
-        start_time=start_time,
-        end_time=end_time,
-        model_name=model_name,
-        findings_data=findings_data,
-        token_usage=token_usage,
-        prd_path=prd_path,
-    )
-    report_path = out_dir / "report.md"
-    report_path.write_text(report_md, encoding="utf-8")
-    print(f"  report.md             -> {report_path}")
+    # Sub-agent artifacts
+    for agent_id, ext, label in [
+        ("crawler",         "site_map.json",   "site_map.json       "),
+        ("test_generator",  "findings.json",   "findings.json       "),
+        ("verifier",        "verdicts.json",   "verdicts.json       "),
+    ]:
+        content = sub_agent_results.get(agent_id, "")
+        if content:
+            path = out_dir / ext
+            path.write_text(content, encoding="utf-8")
+            print(f"  {label}   -> {path}")
 
-    report_json_path = out_dir / "report.json"
-    report_json_path.write_text(
-        json.dumps(findings_data, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-    print(f"  report.json           -> {report_json_path}")
+    # ReportGen produces HTML report
+    report_html_content = sub_agent_results.get("report_generator", "")
+    if report_html_content:
+        # Split on marker if agent returned both HTML and markdown
+        if "---MARKDOWN---" in report_html_content:
+            html_part, md_part = report_html_content.split("---MARKDOWN---", 1)
+        else:
+            html_part = report_html_content
+            md_part = ""
+
+        report_html_path = out_dir / "report.html"
+        report_html_path.write_text(html_part.strip(), encoding="utf-8")
+        print(f"  report.html          -> {report_html_path}")
+
+        if md_part.strip():
+            report_md_path = out_dir / "report.md"
+            report_md_path.write_text(md_part.strip(), encoding="utf-8")
+            print(f"  report.md            -> {report_md_path}")
+
+    # Parse verdicts for console summary
+    verdicts_text = sub_agent_results.get("verifier", "{}")
+    try:
+        # Strip markdown fences if present
+        clean = verdicts_text.strip()
+        if clean.startswith("```"):
+            clean = clean.split("```", 2)[1]
+            if clean.startswith("json"):
+                clean = clean[4:]
+        verdicts_data = json.loads(clean)
+    except (json.JSONDecodeError, IndexError):
+        verdicts_data = {}
+
+    findings = verdicts_data.get("findings", [])
+    summary = verdicts_data.get("summary", {})
 
     conversation_path = out_dir / "raw_conversation.json"
     conversation_path.write_text(
@@ -274,7 +296,7 @@ async def main(
     mins, secs = divmod(int(duration.total_seconds()), 60)
     duration_str = f"{mins}m {secs}s"
 
-    pages_visited = summary.get("pages_visited", len(findings_data.get("pages_tested", [])))
+    pages_visited = summary.get("pages_visited", 0)
     issues_found = summary.get("issues_found", len(findings))
 
     severity_counts: dict[str, int] = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
@@ -296,6 +318,8 @@ async def main(
     print(f"  Input tokens     : {token_usage.input_tokens:,}")
     print(f"  Output tokens    : {token_usage.output_tokens:,}")
     print(f"  Estimated cost   : ${token_usage.estimated_cost_usd:.6f}")
-    print(f"  Report           : {report_path.resolve()}")
+    report_html_path = out_dir / "report.html"
+    if report_html_path.exists():
+        print(f"  Report           : {report_html_path.resolve()}")
     print("=" * 60)
     print()

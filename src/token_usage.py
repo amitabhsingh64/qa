@@ -2,7 +2,8 @@
 Token usage tracking with Bedrock Converse API pricing.
 
 Accumulates input/output token counts across all API calls in a session
-and estimates USD cost based on the active model.
+and estimates USD cost based on the active model. Supports per-agent
+breakdown so costs can be attributed to each sub-agent after the session.
 """
 
 from __future__ import annotations
@@ -30,7 +31,12 @@ def _lookup_pricing(model_id: str) -> tuple[float, float]:
 
 
 class TokenUsage:
-    """Accumulates token usage across all API calls in the session."""
+    """
+    Accumulates token usage across all Bedrock API calls in the session.
+
+    Supports per-agent attribution: pass agent_id to add() to record which
+    agent consumed which tokens. Access the breakdown via agent_breakdown.
+    """
 
     def __init__(self, model: str = "") -> None:
         self.model = model
@@ -39,19 +45,28 @@ class TokenUsage:
         pricing = _lookup_pricing(model)
         self._cost_per_m_input = pricing[0]
         self._cost_per_m_output = pricing[1]
+        # Per-agent breakdown: {agent_id: {"input": N, "output": N}}
+        self._breakdown: dict[str, dict[str, int]] = {}
 
-    def add(self, usage: dict | None) -> None:
+    def add(self, usage: dict | None, agent_id: str = "orchestrator") -> None:
         """
-        Add token counts from a Bedrock Converse ``usage`` dict.
+        Record token counts from a Bedrock Converse ``usage`` dict.
 
         Args:
-            usage: Dict with ``inputTokens`` / ``outputTokens`` keys as
-                   returned by ``response['usage']``. Silently ignored if None.
+            usage:    Dict with ``inputTokens`` / ``outputTokens`` keys as
+                      returned by ``response['usage']``. Silently ignored if None.
+            agent_id: Which agent made this call. Defaults to "orchestrator".
         """
         if not usage:
             return
-        self.input_tokens += usage.get("inputTokens", 0) or 0
-        self.output_tokens += usage.get("outputTokens", 0) or 0
+        inp = usage.get("inputTokens", 0) or 0
+        out = usage.get("outputTokens", 0) or 0
+        self.input_tokens += inp
+        self.output_tokens += out
+
+        entry = self._breakdown.setdefault(agent_id, {"input": 0, "output": 0})
+        entry["input"] += inp
+        entry["output"] += out
 
     @property
     def total_tokens(self) -> int:
@@ -63,7 +78,24 @@ class TokenUsage:
         output_cost = (self.output_tokens / 1_000_000) * self._cost_per_m_output
         return round(input_cost + output_cost, 6)
 
+    def agent_cost_usd(self, agent_id: str) -> float:
+        """Return estimated USD cost for a single agent's token usage."""
+        entry = self._breakdown.get(agent_id, {"input": 0, "output": 0})
+        return round(
+            (entry["input"] / 1_000_000) * self._cost_per_m_input
+            + (entry["output"] / 1_000_000) * self._cost_per_m_output,
+            6,
+        )
+
     def to_dict(self) -> dict:
+        breakdown_with_cost = {
+            aid: {
+                "input_tokens": v["input"],
+                "output_tokens": v["output"],
+                "estimated_cost_usd": self.agent_cost_usd(aid),
+            }
+            for aid, v in self._breakdown.items()
+        }
         return {
             "model": self.model,
             "input_tokens": self.input_tokens,
@@ -74,4 +106,5 @@ class TokenUsage:
                 "input_per_M_usd": self._cost_per_m_input,
                 "output_per_M_usd": self._cost_per_m_output,
             },
+            "breakdown_by_agent": breakdown_with_cost,
         }

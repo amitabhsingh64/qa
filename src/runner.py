@@ -1,31 +1,78 @@
 """
 Core agentic loop using the AWS Bedrock Converse API (boto3).
 
-The loop follows the standard tool-use pattern:
-  1. Send messages to Claude-on-Bedrock with available Playwright tools.
-  2. If the model returns toolUse blocks, execute them via MCP.
-  3. Feed toolResult blocks back in a user turn and repeat.
-  4. Stop when stopReason is "end_turn" or the model emits TESTING_COMPLETE.
-  5. Run a final summarization call to produce structured JSON findings.
+Two-phase orchestration:
+  Phase 1 — Discovery: Orchestrator invokes the Crawler to map the site.
+  Phase 2 — Test + Report: Orchestrator invokes TestGen → Verifier → ReportGen.
 
-Bedrock Converse message format (differs from the Anthropic SDK):
-  - Content is always a list of typed blocks, even for plain text.
-  - System prompt is a separate list: [{"text": "..."}]
-  - Tool definitions use the toolSpec / inputSchema.json wrapper.
-  - Tool results use the toolResult content block type.
-  - Usage keys are camelCase: inputTokens / outputTokens.
+The orchestrator has exactly one tool: invoke_agent(agent_id, mission_brief).
+It never touches Playwright directly. Each sub-agent runs in its own fresh
+Bedrock Converse session with only the tools its manifest declares.
+
+invoke_agent flow:
+  1. Our code intercepts the invoke_agent tool call.
+  2. Loads agents/{agent_id}/skills.md as the sub-agent system prompt.
+  3. Loads agents/{agent_id}/manifest.json to get requires_tools.
+  4. Filters the MCP tool list to only those tools.
+  5. Runs a fresh inner Bedrock loop (up to SUB_AGENT_MAX_ITER iterations).
+  6. Returns the sub-agent's final output as a toolResult to the orchestrator.
 """
 
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
-from src.prompts import SYSTEM_PROMPT, SUMMARY_SYSTEM_PROMPT, build_summary_prompt
+from src.prompts import build_orchestrator_prompt
 from src.token_usage import TokenUsage
 from src.tools import execute_tool_call, mcp_tools_to_bedrock
 
-MAX_ITERATIONS = 50
-_CONTEXT_WINDOW = 20  # keep last N messages beyond the first user message
+AGENTS_DIR = Path(__file__).parent.parent / "agents"
+
+ORCHESTRATOR_MAX_ITER = 20
+SUB_AGENT_MAX_ITER = 25  # hard cap — hitting this means skills.md needs attention
+
+# Module-level agent cache: {agent_id: {"skills": str, "manifest": dict}}
+# Loaded once per session; call clear_cache() between sessions or during development.
+_agent_cache: dict[str, dict] = {}
+
+
+def clear_cache() -> None:
+    """Clear the agent manifest + skills cache. Call between sessions or during dev."""
+    _agent_cache.clear()
+
+# The single tool the orchestrator can call
+INVOKE_AGENT_TOOL = {
+    "toolSpec": {
+        "name": "invoke_agent",
+        "description": (
+            "Delegate a task to a specialist sub-agent. The sub-agent runs in its "
+            "own isolated context with only the tools it needs. Returns the sub-agent's "
+            "structured JSON output as a string."
+        ),
+        "inputSchema": {
+            "json": {
+                "type": "object",
+                "properties": {
+                    "agent_id": {
+                        "type": "string",
+                        "enum": ["crawler", "test_generator", "verifier", "report_generator"],
+                        "description": "Which sub-agent to invoke.",
+                    },
+                    "mission_brief": {
+                        "type": "string",
+                        "description": (
+                            "Full context and task for the sub-agent. Include: "
+                            "target URL, all relevant data from prior agents, "
+                            "specific instructions, and expected output format."
+                        ),
+                    },
+                },
+                "required": ["agent_id", "mission_brief"],
+            }
+        },
+    }
+}
 
 
 async def run_qa_loop(
@@ -36,73 +83,58 @@ async def run_qa_loop(
     model_name: str,
     token_usage: TokenUsage,
     verbose: bool = True,
-) -> tuple[str, list[dict]]:
+) -> tuple[str, list[dict], dict[str, str]]:
     """
-    Run the QA agentic loop and return the final model output plus a conversation log.
+    Run the two-phase QA orchestration loop.
 
-    Args:
-        url:            Target URL to test.
-        prd_content:    PRD/requirements text (empty string if not provided).
-        mcp_session:    Active MCP ``ClientSession`` connected to Playwright.
-        bedrock_client: boto3 ``bedrock-runtime`` client.
-        model_name:     Bedrock modelId to use.
-        token_usage:    TokenUsage accumulator (mutated in place).
-        verbose:        Print progress to stdout.
+    Phase 1: Orchestrator invokes Crawler → site_map
+    Phase 2: Orchestrator invokes TestGen → Verifier → ReportGen
 
     Returns:
-        Tuple of (final_text, conversation_log).
+        Tuple of (final_text, conversation_log, sub_agent_results).
+        sub_agent_results keys: "crawler", "test_generator", "verifier", "report_generator"
     """
+    # Clear the agent cache at session start so skills.md edits take effect
+    # without restarting the process (important during development)
+    clear_cache()
+
     tools_response = await mcp_session.list_tools()
-    bedrock_tools = mcp_tools_to_bedrock(tools_response.tools)
+    all_mcp_tools = mcp_tools_to_bedrock(tools_response.tools)
 
     if verbose:
-        tool_names = [t["toolSpec"]["name"] for t in bedrock_tools]
-        print(f"  Connected to Playwright MCP: {len(bedrock_tools)} tools available")
-        print(f"  Tools: {', '.join(tool_names[:8])}{'...' if len(tool_names) > 8 else ''}")
+        print(f"  Playwright MCP: {len(all_mcp_tools)} tools available")
         print()
 
-    initial_content = (
-        f"Test this URL thoroughly: {url}\n\n"
-        f"PRD context: {prd_content if prd_content else 'none provided'}\n\n"
-        "Use the Playwright tools to explore the site, identify bugs, and test key "
-        "user flows. Be systematic: start with discovery, then test each major "
-        "feature area. When complete, output your findings JSON followed by TESTING_COMPLETE."
-    )
+    orchestrator_skills = _load_skills("orchestrator")
+    initial_message = build_orchestrator_prompt(url, prd_content)
 
-    # Bedrock requires content as a list of typed blocks, even for plain text
     messages: list[dict] = [
-        {"role": "user", "content": [{"text": initial_content}]}
+        {"role": "user", "content": [{"text": initial_message}]}
     ]
     conversation_log: list[dict] = [
-        {"role": "user", "content": initial_content, "iteration": 0}
+        {"role": "user", "content": initial_message, "iteration": 0}
     ]
+    sub_agent_results: dict[str, str] = {}
     final_text = ""
 
-    for iteration in range(1, MAX_ITERATIONS + 1):
+    for iteration in range(1, ORCHESTRATOR_MAX_ITER + 1):
         if verbose:
-            print(f"[iter {iteration:02d}] Calling model...", end=" ", flush=True)
-
-        # Rolling window: keep first user message + last N messages
-        if len(messages) > _CONTEXT_WINDOW + 1:
-            windowed = messages[:1] + messages[-_CONTEXT_WINDOW:]
-        else:
-            windowed = messages
+            print(f"[orchestrator iter {iteration:02d}]", end=" ", flush=True)
 
         response = bedrock_client.converse(
             modelId=model_name,
-            system=[{"text": SYSTEM_PROMPT}],
-            messages=windowed,
-            inferenceConfig={"maxTokens": 8192, "temperature": 1.0},
-            toolConfig={"tools": bedrock_tools},
+            system=[{"text": orchestrator_skills}],
+            messages=messages,
+            inferenceConfig={"maxTokens": 4096, "temperature": 1.0},
+            toolConfig={"tools": [INVOKE_AGENT_TOOL]},
         )
 
-        token_usage.add(response.get("usage"))
+        token_usage.add(response.get("usage"), agent_id="orchestrator")
 
         stop_reason = response.get("stopReason", "")
-        assistant_message = response["output"]["message"]  # {"role": "assistant", "content": [...]}
+        assistant_message = response["output"]["message"]
         messages.append(assistant_message)
 
-        # Parse content blocks
         text_parts: list[str] = []
         tool_use_blocks: list[dict] = []
         for block in assistant_message.get("content", []):
@@ -113,8 +145,16 @@ async def run_qa_loop(
 
         text_content = "\n".join(text_parts)
 
+        if verbose:
+            tools_str = ", ".join(
+                f"{t['name']}({t['input'].get('agent_id', '')})" for t in tool_use_blocks
+            ) if tool_use_blocks else "no tool calls"
+            print(f"stop={stop_reason} [{tools_str}]")
+            if text_content:
+                print(f"  {text_content[:200].replace(chr(10), ' ')}")
+
         conversation_log.append({
-            "role": "assistant",
+            "role": "orchestrator",
             "iteration": iteration,
             "text": text_content[:500],
             "tool_calls": [
@@ -124,51 +164,47 @@ async def run_qa_loop(
             "stop_reason": stop_reason,
         })
 
-        if "TESTING_COMPLETE" in text_content:
-            if verbose:
-                print("TESTING_COMPLETE signal received.")
-            final_text = text_content
-            break
-
         if stop_reason == "end_turn" and not tool_use_blocks:
-            if verbose:
-                print("end_turn with no tool calls. Loop ending.")
             final_text = text_content
             break
 
         if not tool_use_blocks:
-            if verbose:
-                print(f"No toolUse blocks (stopReason={stop_reason}). Loop ending.")
             final_text = text_content
             break
 
-        # Execute tools and collect results
-        if verbose:
-            tool_summary = ", ".join(t["name"] for t in tool_use_blocks)
-            print(f"tools=[{tool_summary}]", end=" ", flush=True)
-
+        # Handle invoke_agent tool calls
         tool_result_blocks: list[dict] = []
         for tool_use in tool_use_blocks:
-            result_text = await execute_tool_call(
-                mcp_session, tool_use["name"], tool_use["input"]
-            )
+            if tool_use["name"] != "invoke_agent":
+                result_text = f"[ERROR] Orchestrator called unexpected tool '{tool_use['name']}'. Only invoke_agent is allowed."
+            else:
+                agent_id = tool_use["input"]["agent_id"]
+                mission_brief = tool_use["input"]["mission_brief"]
 
-            if verbose:
-                preview = result_text[:200].replace("\n", " ")
-                print(
-                    f"\n         {tool_use['name']}"
-                    f"({json.dumps(tool_use['input'])[:50]}): {preview}",
-                    end="",
+                if verbose:
+                    print(f"\n  → [{agent_id}] starting...")
+
+                result_text = await run_sub_agent(
+                    agent_id=agent_id,
+                    mission_brief=mission_brief,
+                    all_mcp_tools=all_mcp_tools,
+                    mcp_session=mcp_session,
+                    bedrock_client=bedrock_client,
+                    model_name=model_name,
+                    token_usage=token_usage,
+                    verbose=verbose,
                 )
 
-            conversation_log.append({
-                "role": "tool",
-                "iteration": iteration,
-                "tool_use_id": tool_use["toolUseId"],
-                "tool_name": tool_use["name"],
-                "tool_args": tool_use["input"],
-                "result_preview": result_text[:300],
-            })
+                sub_agent_results[agent_id] = result_text
+
+                if verbose:
+                    print(f"  ← [{agent_id}] done ({len(result_text)} chars)\n")
+
+                conversation_log.append({
+                    "role": "sub_agent_result",
+                    "agent_id": agent_id,
+                    "result_preview": result_text[:500],
+                })
 
             tool_result_blocks.append({
                 "toolResult": {
@@ -177,99 +213,153 @@ async def run_qa_loop(
                 }
             })
 
-        # All tool results go back in one user turn
         messages.append({"role": "user", "content": tool_result_blocks})
 
+    # The report is in sub_agent_results; orchestrator's final text is just a summary
+    return final_text, conversation_log, sub_agent_results
+
+
+async def run_sub_agent(
+    agent_id: str,
+    mission_brief: str,
+    all_mcp_tools: list[dict],
+    mcp_session,
+    bedrock_client,
+    model_name: str,
+    token_usage: TokenUsage,
+    verbose: bool = True,
+) -> str:
+    """
+    Run a sub-agent in a fresh Bedrock Converse session.
+
+    The sub-agent receives:
+    - Its skills.md as the system prompt
+    - Only the tools in its manifest.json requires_tools
+    - The mission_brief as the initial user message
+
+    Returns the sub-agent's final text output (structured JSON expected).
+    """
+    skills = _load_skills(agent_id)
+    agent_tools = _filter_tools(agent_id, all_mcp_tools)
+
+    messages: list[dict] = [
+        {"role": "user", "content": [{"text": mission_brief}]}
+    ]
+
+    tool_config = {"tools": agent_tools} if agent_tools else None
+    final_text = ""
+
+    for iteration in range(1, SUB_AGENT_MAX_ITER + 1):
         if verbose:
-            print()
+            print(f"    [{agent_id} {iteration:02d}]", end=" ", flush=True)
 
-    # ------------------------------------------------------------------
-    # Summarization call — produce structured JSON findings
-    # ------------------------------------------------------------------
-    if verbose:
-        print(f"\nSummarising findings from {len(conversation_log)} log entries...")
+        call_kwargs: dict = dict(
+            modelId=model_name,
+            system=[{"text": skills}],
+            messages=messages,
+            inferenceConfig={"maxTokens": 8192, "temperature": 1.0},
+        )
+        if tool_config:
+            call_kwargs["toolConfig"] = tool_config
 
-    observations = _extract_observations(conversation_log)
-    summary_prompt = build_summary_prompt(url, observations)
+        response = bedrock_client.converse(**call_kwargs)
+        token_usage.add(response.get("usage"), agent_id=agent_id)
 
-    summary_response = bedrock_client.converse(
-        modelId=model_name,
-        system=[{"text": SUMMARY_SYSTEM_PROMPT}],
-        messages=[{"role": "user", "content": [{"text": summary_prompt}]}],
-        inferenceConfig={"maxTokens": 4096, "temperature": 1.0},
-    )
-    token_usage.add(summary_response.get("usage"))
+        stop_reason = response.get("stopReason", "")
+        assistant_message = response["output"]["message"]
+        messages.append(assistant_message)
 
-    summary_text = ""
-    for block in summary_response["output"]["message"].get("content", []):
-        if "text" in block:
-            summary_text += block["text"]
+        text_parts: list[str] = []
+        tool_use_blocks: list[dict] = []
+        for block in assistant_message.get("content", []):
+            if "text" in block:
+                text_parts.append(block["text"])
+            elif "toolUse" in block:
+                tool_use_blocks.append(block["toolUse"])
 
-    conversation_log.append({
-        "role": "assistant",
-        "iteration": MAX_ITERATIONS + 1,
-        "text": summary_text[:500],
-        "tool_calls": [],
-        "note": "Summarization call",
-    })
+        text_content = "\n".join(text_parts)
 
-    return summary_text, conversation_log
+        if verbose:
+            tool_names = ", ".join(t["name"] for t in tool_use_blocks)
+            print(f"stop={stop_reason} tools=[{tool_names}]")
+
+        if stop_reason == "end_turn" and not tool_use_blocks:
+            final_text = text_content
+            break
+
+        if not tool_use_blocks:
+            final_text = text_content
+            break
+
+        # Execute tools and feed results back for the next iteration
+        tool_result_blocks: list[dict] = []
+        for tool_use in tool_use_blocks:
+            result_text = await execute_tool_call(
+                mcp_session, tool_use["name"], tool_use["input"]
+            )
+            if verbose:
+                preview = result_text[:120].replace("\n", " ")
+                print(f"      {tool_use['name']}: {preview}")
+
+            tool_result_blocks.append({
+                "toolResult": {
+                    "toolUseId": tool_use["toolUseId"],
+                    "content": [{"text": result_text}],
+                }
+            })
+
+        messages.append({"role": "user", "content": tool_result_blocks})
+    else:
+        # for...else: loop completed all iterations without a break (cap hit)
+        print(
+            f"\n  WARNING: {agent_id} hit the {SUB_AGENT_MAX_ITER}-iteration cap. "
+            f"Review its skills.md — it may be looping or not terminating cleanly."
+        )
+
+    return final_text
 
 
-def _extract_observations(conversation_log: list[dict]) -> str:
+def _load_agent(agent_id: str) -> dict:
     """
-    Build a compact human-readable digest of what happened during the session.
+    Load and cache an agent's manifest + skills for the current session.
 
-    Args:
-        conversation_log: List of iteration dicts from ``run_qa_loop``.
-
-    Returns:
-        Multi-line string summarising observations (or a fallback message).
+    Returns a dict with keys "skills" (str) and "manifest" (dict).
+    Cached in _agent_cache after first load — call clear_cache() to reset.
     """
-    pages_visited: list[str] = []
-    console_errors: list[str] = []
-    findings_notes: list[str] = []
+    if agent_id in _agent_cache:
+        return _agent_cache[agent_id]
 
-    for entry in conversation_log:
-        if entry.get("role") != "tool":
-            continue
+    skills_path = AGENTS_DIR / agent_id / "skills.md"
+    manifest_path = AGENTS_DIR / agent_id / "manifest.json"
 
-        tool = entry.get("tool_name", "")
-        args = entry.get("tool_args", {})
-        result = entry.get("result_preview", "")
+    if not skills_path.exists():
+        raise FileNotFoundError(
+            f"No skills.md found for agent '{agent_id}' at {skills_path}"
+        )
+    if not manifest_path.exists():
+        raise FileNotFoundError(
+            f"No manifest.json found for agent '{agent_id}' at {manifest_path}"
+        )
 
-        if tool == "browser_navigate":
-            page_url = args.get("url", "")
-            if "404 Not Found" in result or "404" in result:
-                findings_notes.append(f"404 page: {page_url}")
-            elif page_url:
-                title = ""
-                if "Page Title:" in result:
-                    title = result.split("Page Title:")[-1].split("\n")[0].strip()
-                pages_visited.append(f"{page_url} — {title}" if title else page_url)
+    entry = {
+        "skills": skills_path.read_text(encoding="utf-8"),
+        "manifest": json.loads(manifest_path.read_text(encoding="utf-8")),
+    }
+    _agent_cache[agent_id] = entry
+    return entry
 
-        elif tool == "browser_console_messages":
-            if "[ERROR]" in result:
-                for line in result.split("\n"):
-                    if "[ERROR]" in line:
-                        console_errors.append(line.strip()[:200])
 
-        elif tool in ("browser_evaluate", "browser_run_code"):
-            result_lower = result.lower()
-            if "logout" in result_lower:
-                findings_notes.append("Login succeeded with test credentials")
-            if "invalid" in result_lower and "username" in str(args).lower():
-                findings_notes.append("Invalid credentials: error message shown")
+def _load_skills(agent_id: str) -> str:
+    return _load_agent(agent_id)["skills"]
 
-    lines: list[str] = []
-    if pages_visited:
-        lines.append("PAGES VISITED:")
-        lines.extend(f"  - {p}" for p in pages_visited[:20])
-    if console_errors:
-        lines.append("\nCONSOLE ERRORS:")
-        lines.extend(f"  - {e}" for e in list(dict.fromkeys(console_errors))[:10])
-    if findings_notes:
-        lines.append("\nKEY OBSERVATIONS:")
-        lines.extend(f"  - {n}" for n in findings_notes)
 
-    return "\n".join(lines) if lines else "No significant observations recorded."
+def _filter_tools(agent_id: str, all_tools: list[dict]) -> list[dict]:
+    """
+    Return only the MCP tools declared in the agent's manifest requires_tools.
+    Returns empty list if requires_tools is absent or empty (no-tool agent).
+    Tool list is already in Bedrock format — filter on toolSpec.name.
+    """
+    required = set(_load_agent(agent_id)["manifest"].get("requires_tools", []))
+    if not required:
+        return []
+    return [t for t in all_tools if t["toolSpec"]["name"] in required]
