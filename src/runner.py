@@ -21,6 +21,7 @@ invoke_agent flow:
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -41,6 +42,100 @@ _agent_cache: dict[str, dict] = {}
 def clear_cache() -> None:
     """Clear the agent manifest + skills cache. Call between sessions or during dev."""
     _agent_cache.clear()
+
+# ---------------------------------------------------------------------------
+# Retry-scope helpers
+# ---------------------------------------------------------------------------
+
+def _retry_reason(prev_status: str) -> str:
+    """Map the previous invocation's status to a retry reason string."""
+    if prev_status == "capped":
+        return "previous_attempt_capped"
+    if prev_status in ("error", "running"):
+        return "previous_attempt_errored"
+    return "explicit_orchestrator_decision"
+
+
+def _parse_retry_context(mission_brief: str) -> list[str]:
+    """
+    Extract the bulleted items list from a '## Retry context' section.
+
+    The orchestrator writes this section when retrying a sub-agent. Only
+    bullet items that are not the 'Previous invocation' metadata line or
+    a 'Note:' line are returned as items_targeted.
+
+    Returns [] if no section is found.
+    """
+    match = re.search(
+        r"##\s+Retry\s+context\b.*?\n(.*?)(?=\n##\s|\Z)",
+        mission_brief,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not match:
+        return []
+    block = match.group(1)
+    items = re.findall(r"^\s*[-*]\s+(.+)", block, re.MULTILINE)
+    return [
+        item.strip()
+        for item in items
+        if not re.match(r"(?i)(previous invocation|note:)", item.strip())
+    ]
+
+
+def _compute_retry_counts(
+    agent_id: str,
+    items_targeted: list[str],
+    output_text: str,
+) -> tuple[int | None, int | None]:
+    """
+    Try to count how many of items_targeted appear in the retry output.
+
+    Verifier: items_targeted are finding IDs → matched against verdict finding_id.
+    Crawler:  items_targeted are page URLs    → matched against pages[].url.
+    Others:   free-text targets, not reliably matchable → returns (None, None).
+
+    Returns (items_completed, items_still_missing).
+    """
+    if not items_targeted:
+        return None, None
+
+    clean = output_text.strip()
+    if clean.startswith("```"):
+        lines = clean.splitlines()
+        clean = "\n".join(
+            lines[1:-1] if lines and lines[-1].strip() == "```" else lines[1:]
+        )
+
+    try:
+        parsed = json.loads(clean)
+    except (json.JSONDecodeError, ValueError):
+        return None, None
+
+    targeted_lower = [t.lower().strip() for t in items_targeted]
+
+    if agent_id == "verifier":
+        verdicts = (
+            parsed.get("verdicts")
+            or parsed.get("completed", {}).get("verdicts", [])
+            or []
+        )
+        classified = {v.get("finding_id", "").lower() for v in verdicts}
+        completed = sum(1 for t in targeted_lower if t in classified)
+        return completed, len(targeted_lower) - completed
+
+    if agent_id == "crawler":
+        pages = (
+            parsed.get("pages")
+            or parsed.get("completed", {}).get("pages", [])
+            or []
+        )
+        crawled = {p.get("url", "").lower() for p in pages}
+        completed = sum(1 for t in targeted_lower if t in crawled)
+        return completed, len(targeted_lower) - completed
+
+    # TestGen and ReportGen: items are free-text, not reliably matchable
+    return None, None
+
 
 # The single tool the orchestrator can call
 INVOKE_AGENT_TOOL = {
@@ -232,6 +327,17 @@ async def run_qa_loop(
                         if prior_invocations else None
                     )
 
+                    # Build retry_scope for retried invocations
+                    retry_scope: dict | None = None
+                    if attempt > 1 and prior_invocations:
+                        prev_status = prior_invocations[-1].get("status", "")
+                        retry_scope = {
+                            "reason": _retry_reason(prev_status),
+                            "items_targeted": _parse_retry_context(mission_brief),
+                            "items_completed": None,
+                            "items_still_missing": None,
+                        }
+
                     if verbose:
                         attempt_label = f" (attempt {attempt})" if attempt > 1 else ""
                         print(f"\n  → [{agent_id}] starting{attempt_label}...")
@@ -246,6 +352,7 @@ async def run_qa_loop(
                         token_usage=token_usage,
                         attempt=attempt,
                         previous_invocation_id=previous_inv_id,
+                        retry_scope=retry_scope,
                         verbose=verbose,
                     )
 
@@ -283,6 +390,7 @@ async def run_sub_agent(
     token_usage: TokenUsage,
     attempt: int = 1,
     previous_invocation_id: str | None = None,
+    retry_scope: dict | None = None,
     verbose: bool = True,
 ) -> str:
     """
@@ -426,6 +534,14 @@ async def run_sub_agent(
     except Exception:
         inv_status = "error"
         raise
+    else:
+        # Compute retry counts now that we have final_text (only runs if no exception)
+        if retry_scope and retry_scope.get("items_targeted"):
+            completed, missing = _compute_retry_counts(
+                agent_id, retry_scope["items_targeted"], final_text
+            )
+            retry_scope["items_completed"] = completed
+            retry_scope["items_still_missing"] = missing
     finally:
         token_usage.close_invocation(
             inv_id=inv_id,
@@ -435,6 +551,7 @@ async def run_sub_agent(
             started_at=started_at,
             tokens_before=tokens_before,
             capped_summary=capped_summary,
+            retry_scope=retry_scope,
         )
 
     return final_text

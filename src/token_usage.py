@@ -136,6 +136,7 @@ class TokenUsage:
         started_at: datetime,
         tokens_before: dict[str, int],
         capped_summary: dict | None = None,
+        retry_scope: dict | None = None,
     ) -> None:
         """
         Finalize an invocation record opened by begin_invocation().
@@ -148,6 +149,7 @@ class TokenUsage:
             started_at:      datetime when the invocation started (for duration).
             tokens_before:   Snapshot from snapshot_tokens() taken before the run.
             capped_summary:  Optional metadata dict when status is "capped".
+            retry_scope:     Optional retry targeting metadata (only set when attempt > 1).
         """
         record = next(
             (r for r in self._invocations if r["invocation_id"] == inv_id), None
@@ -169,6 +171,8 @@ class TokenUsage:
         }
         if capped_summary is not None:
             record["capped_summary"] = capped_summary
+        if retry_scope is not None:
+            record["retry_scope"] = retry_scope
 
     def get_invocations(self, agent_id: str | None = None) -> list[dict]:
         """

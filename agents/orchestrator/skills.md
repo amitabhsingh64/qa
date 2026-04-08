@@ -182,6 +182,40 @@ Return the report in this exact format — HTML first, then the marker, then mar
 
 ---
 
+## Retrying a Sub-Agent
+
+When a sub-agent returns `"status": "capped"` or `"status": "error"`, you may
+decide to retry it. When you do, your `invoke_agent` mission brief **must** include
+a `## Retry context` section. The runner reads this section to populate retry
+tracking in the session log.
+
+### Retry context format
+
+```markdown
+## Retry context
+**Previous invocation:** inv_002 (status: capped)
+
+The following items were not completed and must be addressed in this retry:
+- /products/category-page (Crawler: page not visited)
+- f014, f015, f016 (Verifier: finding IDs not yet classified)
+- search form XSS probe (TestGen: security test not reached)
+
+Focus only on these items. Do not redo work already present in the previous
+result's `completed` section.
+```
+
+Rules for writing the retry context:
+- List each item as a separate bullet point
+- For Verifier retries: list the specific finding IDs (e.g. `f014`, `f015`)
+- For Crawler retries: list the specific page URLs not yet visited
+- For TestGen retries: describe the test areas or pages not covered
+- Do NOT include the "Previous invocation" line or "Note:" lines as bullet items —
+  these will be filtered out by the runner
+- Pass the previous agent's `completed` output in the mission brief so the
+  agent knows what was already done and does not repeat it
+
+---
+
 ## Sub-Agent Result Status
 
 Every sub-agent result includes a `status` field. You must check this before
