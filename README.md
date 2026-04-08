@@ -1,12 +1,12 @@
 # Autonomous QA
 
-> AI-powered, multi-agent website QA testing system. Point it at a URL — it explores the site, generates tests, executes them in a real browser, correlates with infrastructure data, and delivers an actionable QA report.
+> AI-powered, multi-agent website QA testing system. Point it at a URL — it maps the site, generates and executes tests in a real browser, verifies results, and delivers an HTML report with a coherent summary.
 
 ```
 qa-auto https://staging.myapp.com --prd ./requirements.md
 ```
 
-**What it does:** Replaces 60–75% of manual QA effort. Handles regression, smoke, sanity, E2E, cross-browser, responsive, visual, boundary, load, API, and security surface testing — orchestrated by specialized AI agents talking to real tools via MCP.
+**What it does:** Replaces 60–75% of manual QA effort. Handles regression, smoke, sanity, E2E, boundary, visual, and security surface testing — orchestrated by specialized AI agents talking to a real browser via Playwright MCP.
 
 **What it doesn't do:** Usability testing, deep penetration testing, business logic validation, cognitive accessibility assessment. These stay human.
 
@@ -16,85 +16,86 @@ qa-auto https://staging.myapp.com --prd ./requirements.md
 
 Modern teams ship daily. QA cycles take days. The gap keeps growing.
 
-A full manual QA cycle on a 30-page site takes ~30 hours: test plan creation (4h) + test case writing (8h) + execution (8h) + bug docs (2h) + regression retest (4h) + reporting (2h). Our system does it in ~5 minutes. API costs depend on provider — $0 on Gemini free tier (prototyping), ~$3.80 on Claude (production).
+A full manual QA cycle on a 30-page site takes ~30 hours: test plan creation (4h) + test case writing (8h) + execution (8h) + bug docs (2h) + regression retest (4h) + reporting (2h). This system does it in minutes.
 
-**Competitors exist** (Bug0, QA.tech, mabl, Functionize) — but they all do browser-only testing. Nobody unifies functional testing + load testing + API testing + infrastructure observability + application error correlation into a single AI-orchestrated system. That's the gap we fill.
+**Competitors exist** (Bug0, QA.tech, mabl, Functionize) — but they all do browser-only testing. Nobody unifies functional testing + site mapping + intelligent test generation + verification + structured reporting into a single AI-orchestrated multi-agent system. That's the gap we fill.
 
 ---
 
 ## Architecture
 
-### Three design principles
+### Design principles
 
-1. **Modularity over monoliths** — Every agent is a self-contained plugin. New testing capabilities = new folder. No orchestrator code changes.
-2. **Deterministic first, LLM second** — Use fast rule-based logic (keyword matching, pattern detection) where possible. Invoke LLMs only for genuinely ambiguous or creative tasks.
-3. **Observable by default** — Every action, decision, and finding logged to a shared blackboard. Nothing happens in the dark.
+1. **Compartmentalized agents** — Each agent has a single responsibility and runs in its own fresh context. No shared conversation state between agents. This prevents context rot on long sessions.
+2. **Deterministic orchestration** — The orchestrator follows a fixed two-phase flow (discovery → test+report). No ambiguity about what runs when.
+3. **Intelligence in the tool calls** — The orchestrator decides *what* to test and *how* to frame each mission brief. Sub-agents decide *how* to execute. The LLM's reasoning happens at every delegation, not just at the start.
 
-### Three layers
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  COMMUNICATION LAYER                                            │
-│  conversations.md (blackboard) | site_model.json | session state│
-├─────────────────────────────────────────────────────────────────┤
-│  AGENT LAYER                                                    │
-│                                                                 │
-│  ┌─────────────────────────────────────┐                       │
-│  │         ORCHESTRATOR (primary)       │                       │
-│  │  Plans, delegates, coordinates all   │                       │
-│  └──┬───┬───┬───┬───┬───┬───┬──────────┘                       │
-│     │   │   │   │   │   │   │                                  │
-│     ▼   ▼   ▼   ▼   ▼   ▼   ▼                                  │
-│  TestGen Verifier Security LoadTest APITest InfraObs ErrorObs  │
-│  (sub)   (sub)    (sub)    (sub)    (sub)   (sub)    (sub)     │
-│                                                                 │
-│  tier1_locator.py — deterministic element finder (in core/)     │
-├─────────────────────────────────────────────────────────────────┤
-│  TOOL LAYER — MCP servers                                       │
-│                                                                 │
-│  Playwright MCP     JMeter MCP      Postman MCP                 │
-│  (browser)          (load testing)  (API testing)               │
-│                                                                 │
-│  Grafana MCP        Sentry MCP                                  │
-│  (infra metrics)    (app errors)     ← both optional            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### How agents call agents
-
-The LLM is a brain in a jar. It decides what to do. Our code is the hands that execute.
+### Two-phase flow
 
 ```
-1. Our code sends prompt + tools to the primary model (orchestrator)
-2. Model responds with tool_use JSON: {"tool": "invoke_agent", "input": {...}}
-3. Our code catches it → loads target agent's skills.md → makes SEPARATE LLM call
-4. Sub-agent runs its OWN tool loop (2-4 iterations)
-5. Sub-agent result returns to orchestrator as tool_result
-6. Orchestrator continues — may invoke another agent or act directly
+══════════════════════════════════════════
+ PHASE 1: DISCOVERY
+══════════════════════════════════════════
+
+ Orchestrator
+   └── invoke_agent("crawler", mission_brief)
+         │
+         Crawler ──► Playwright MCP ──► site_map.json
+                     (navigates site,       pages, forms,
+                      follows all links)    auth walls,
+                                            tech stack,
+                                            nav graph
+
+
+══════════════════════════════════════════
+ PHASE 2: TEST · VERIFY · REPORT
+══════════════════════════════════════════
+
+ Orchestrator (has full site_map)
+   │
+   ├── invoke_agent("test_generator", site_map + test strategy)
+   │     │
+   │     TestGen ──► Playwright MCP ──► findings.json
+   │                 (generates AND        test results,
+   │                  executes tests       evidence,
+   │                  across whole site)   observations
+   │
+   ├── invoke_agent("verifier", findings)
+   │     │
+   │     Verifier ──► [no tools] ──► verdicts.json
+   │                                  PASS / FAIL / FLAKY
+   │                                  per finding + severity
+   │
+   └── invoke_agent("report_generator", verdicts + site_map)
+         │
+         ReportGen ──► [no tools] ──► report.html
+                                       report.md
 ```
 
-Two nested loops: outer (orchestrator, 50–100 iterations per session) and inner (sub-agent, 2–4 iterations per invocation). Hub-and-spoke topology — sub-agents never talk to each other.
+**Orchestrator total iterations: ~5–8 `invoke_agent` calls. It never touches Playwright.**
 
-### Four key files
+### How `invoke_agent` works
 
-| File | Purpose | Who writes it | Lifespan |
-|------|---------|---------------|----------|
-| `manifest.json` | Machine-readable agent contract (id, trigger, required tools, model tier) | Developer | Permanent |
-| `skills.md` | Domain knowledge loaded as LLM system prompt. Testing heuristics, patterns. **The competitive moat.** | Developer | Permanent, evolving |
-| `mission_brief.md` | Rich context per sub-agent invocation: PRD excerpt + page refs + blackboard observations + run history + edge cases | Orchestrator (at runtime) | Ephemeral (per invocation) |
-| `conversations.md` | Append-only timestamped blackboard. Agents write observations, orchestrator curates excerpts. Full audit trail. | All agents (at runtime) | Per session |
+The orchestrator has one tool: `invoke_agent(agent_id, mission_brief)`. When it calls it:
 
-### MCP server connections
+1. Python loads `agents/{agent_id}/skills.md` as the sub-agent's system prompt
+2. Python loads `agents/{agent_id}/manifest.json` to read `requires_tools`
+3. Only the tools that agent needs are passed to Bedrock (Playwright tools for Crawler and TestGen; none for Verifier and ReportGen)
+4. A fresh Bedrock Converse call is made — the sub-agent has zero memory of prior agents
+5. The sub-agent runs its own tool loop (2–10 iterations)
+6. The result is returned to the orchestrator as a `toolResult` and the orchestrator continues
 
-| MCP Server | What it provides | Required? | Phase |
-|------------|-----------------|-----------|-------|
-| **Playwright MCP** | Browser automation: navigate, click, type, snapshot, screenshot, console, network | **Yes** | 0 |
-| **JMeter MCP** | Load testing: create plan, run scenarios, response times, error rates | No | 5 |
-| **Postman MCP** | API testing: run collections, validate schemas, test auth | No | 5 |
-| **Grafana MCP** | Infrastructure correlation: PromQL metrics, LogQL logs, TraceQL traces | No (requires target to have Grafana) | 5 |
-| **Sentry MCP** | Application error correlation: issues, stack traces, session replays, Seer analysis | No (requires target to have Sentry) | 5 |
+This is what keeps context clean: Crawler doesn't know about TestGen's run. TestGen doesn't see the Crawler's raw conversation. Each agent gets exactly the information it needs in its mission brief — no more.
 
-Grafana and Sentry are query interfaces — they read from existing observability infrastructure the target company already has. If the target has no Grafana/Sentry, those agents simply don't activate.
+### Agents
+
+| Agent | Tools | Input | Output |
+|-------|-------|-------|--------|
+| **Orchestrator** | `invoke_agent` only | URL + PRD | Delegates to all sub-agents |
+| **Crawler** | Playwright MCP (all) | URL + crawl instructions | `site_map.json` |
+| **TestGen** | Playwright MCP (all) | `site_map.json` + test strategy | `findings.json` |
+| **Verifier** | None | `findings.json` | `verdicts.json` (PASS/FAIL/FLAKY) |
+| **ReportGen** | None | `verdicts.json` + `site_map.json` | `report.html` + `report.md` |
 
 ---
 
@@ -103,70 +104,40 @@ Grafana and Sentry are query interfaces — they read from existing observabilit
 ```
 autonomous-qa/
 ├── src/
-│   ├── core/
-│   │   ├── agent_runner.py      # Generic agent execution loop (~400 lines)
-│   │   ├── mcp_client.py        # Multi-MCP server connection manager
-│   │   ├── blackboard.py        # Append-only shared conversation log
-│   │   ├── registry.py          # Scan /agents/, load manifests, validate tools
-│   │   ├── session.py           # Session state, evidence directory
-│   │   ├── site_model.py        # Site graph data structure
-│   │   └── tier1_locator.py     # Deterministic keyword→ref matching
-│   ├── cli.py                   # Entry point: qa-auto <url> [options]
-│   └── config.py                # qa-auto.yaml loader
+│   ├── cli.py              # Entry point: qa-auto <url> [options]
+│   ├── main.py             # Session orchestration, Bedrock + MCP init
+│   ├── runner.py           # Orchestrator loop + invoke_agent handler
+│   ├── prompts.py          # Orchestrator system prompt
+│   ├── tools.py            # MCP → Bedrock schema conversion + execution
+│   ├── report.py           # Output file writing
+│   └── token_usage.py      # Token tracking with Bedrock pricing
 ├── agents/
 │   ├── orchestrator/
 │   │   ├── manifest.json
-│   │   └── skills.md            # 50+ testing heuristic patterns
+│   │   └── skills.md       # Two-phase flow instructions, mission brief templates
+│   ├── crawler/
+│   │   ├── manifest.json
+│   │   └── skills.md       # Site mapping heuristics, what to extract
 │   ├── test_generator/
 │   │   ├── manifest.json
-│   │   └── skills.md
+│   │   └── skills.md       # Test patterns, execution instructions, findings format
 │   ├── verifier/
 │   │   ├── manifest.json
-│   │   └── skills.md
-│   ├── load_tester/             # Phase 5
-│   │   ├── manifest.json
-│   │   └── skills.md
-│   ├── api_tester/              # Phase 5
-│   │   ├── manifest.json
-│   │   └── skills.md
-│   ├── security_tester/         # Phase 5
-│   │   ├── manifest.json
-│   │   └── skills.md
-│   ├── infra_observer/          # Phase 5 (Grafana MCP)
-│   │   ├── manifest.json
-│   │   └── skills.md
-│   └── error_observer/          # Phase 5 (Sentry MCP)
+│   │   └── skills.md       # PASS/FAIL/FLAKY rules, severity classification
+│   └── report_generator/
 │       ├── manifest.json
-│       └── skills.md
-├── sessions/                    # Created at runtime
+│       └── skills.md       # HTML report template, chart generation, summary writing
+├── sessions/               # Runtime output (gitignored)
 │   └── {session-id}/
-│       ├── state.json
-│       ├── conversations.md
-│       ├── site_model.json
-│       ├── report.json
+│       ├── site_map.json
+│       ├── findings.json
+│       ├── verdicts.json
+│       ├── report.html
 │       ├── report.md
-│       └── evidence/
-├── site-models/                 # Persistent per-domain knowledge (schema-versioned)
-│   └── {domain}.json            # Includes "schema_version" field for migration
-├── tests/
+│       └── raw_conversation.json
 ├── pyproject.toml
-├── qa-auto.yaml                 # Default config (gitignored — contains credentials)
-├── qa-auto.example.yaml         # Checked-in template with placeholder values
-├── .gitignore
-└── README.md                    # This file
-```
-
----
-
-## .gitignore
-
-```
-sessions/               # Runtime artifacts, screenshots, state
-qa-auto.yaml            # Contains credentials — use qa-auto.example.yaml as template
-site-models/            # Per-domain learned data
-.venv/
-__pycache__/
-*.pyc
+├── qa-auto.example.yaml
+└── .gitignore
 ```
 
 ---
@@ -176,20 +147,14 @@ __pycache__/
 | Component | Technology | Why |
 |-----------|-----------|-----|
 | Language | Python 3.11+ | Dev velocity. MCP is JSON-RPC (language-agnostic) |
-| LLM API | Model-agnostic (OpenAI-compatible interface) | Gemini 2.5 Pro for prototyping; Claude family for later phases. Swap via config |
-| MCP client | `mcp` Python SDK | Connect to all MCP servers via stdio/HTTP |
+| LLM API | AWS Bedrock Converse API (boto3) | Claude family, no proxy, production-ready |
 | Browser | Playwright MCP (`@playwright/mcp`) | 70+ tools, accessibility tree, cross-browser |
-| Load testing | JMeter MCP (`jmeter-mcp-server`) | Community, Python package by QAInsights |
-| API testing | Postman MCP (official) | Direct API endpoint testing |
-| Observability | Grafana MCP (`mcp-grafana`) | Official, PromQL/LogQL/TraceQL queries |
-| Error tracking | Sentry MCP (`mcp.sentry.dev`) | Official, hosted, OAuth |
-| CLI | argparse (stdlib) | No dependencies |
-| Config | PyYAML | qa-auto.yaml |
+| MCP client | `mcp` Python SDK | stdio connection to Playwright MCP subprocess |
+| Config | PyYAML | `qa-auto.yaml` with env var substitution |
 | Validation | Pydantic v2 | Manifest schema validation |
+| CLI | argparse (stdlib) | No extra dependencies |
 
-**Framework decision:** No framework. The most successful agent implementations use simple composable patterns. LangGraph (rigid state schema), CrewAI (poor logging), AutoGen (conversation metaphor mismatch) were all evaluated and rejected. Our core is ~400 lines of Python.
-
-**Model-agnostic design:** The LLM interface is abstracted behind an OpenAI-compatible client. Swapping providers (Gemini → Claude → others) is a config change, not a code change. Prototyping uses Gemini 2.5 Pro (free tier); later phases will adopt Claude family models.
+**AWS credentials** are resolved by boto3 in the standard order: environment variables → `~/.aws/credentials` → IAM role.
 
 ---
 
@@ -199,405 +164,24 @@ __pycache__/
 # qa-auto.yaml
 target:
   url: "https://staging.myapp.com"
-  prd: "./requirements.md"           # optional
-  auth_cookie: ${AUTH_COOKIE}         # optional; supports env var substitution
+  prd: "./requirements.md"           # optional — shapes test strategy
+  auth_cookie: ${AUTH_COOKIE}         # optional
   exclude_paths: ["/admin", "/internal"]
 
 browser:
   engine: chromium                   # chromium | firefox | webkit
   headless: true
-  viewports: [1920x1080]            # add 768x1024, 375x812 for responsive
 
 models:
-  primary: gemini-2.5-pro            # orchestrator + all agents (prototyping)
-  # primary: claude-opus-4-6         # orchestrator (later phases)
-  # sub: claude-sonnet-4-6           # sub-agents (later phases)
+  primary: "anthropic.claude-3-5-sonnet-20241022-v2:0"   # orchestrator
+  sub: "anthropic.claude-3-5-haiku-20241022-v1:0"        # sub-agents (cheaper)
 
 budget:
   max_per_session: 10.00             # USD, abort gracefully at limit
 
-# Optional MCP integrations (connect if target uses these)
-grafana:
-  enabled: false
-  url: "https://myinstance.grafana.net"
-  token: ${GRAFANA_TOKEN}
-  read_only: true
-
-sentry:
-  enabled: false
-  # Uses OAuth via mcp.sentry.dev — no token needed for cloud
-  org: "my-org"
-  project: "my-project"
-
 reporting:
-  formats: [json, markdown]          # add "html" in Phase 6
-  jira:
-    enabled: false
-    url: "https://myorg.atlassian.net"
-    project_key: "QA"
+  formats: [html, markdown]
 ```
-
----
-
-## Development phases
-
-### Overview
-
-| Phase | Name | Timeline | Effort | Deliverable | Gate |
-|-------|------|----------|--------|-------------|------|
-| **0** | Proof of concept | 3 days | 8h | Single script → raw QA report | Is output useful? |
-| **1** | Foundation | Weeks 1–2 | 24h | Agent runner + registry + MCP client + CLI | Can you add agents by folder? |
-| **2** | Discovery & planning | Weeks 3–4 | 20h | Site crawl + heuristic test plans + PRD | Are plans non-trivial? |
-| **3** | Execution & verification | Weeks 5–7 | 32h | Full loop: URL → report (**MVP**) | Catches real bugs? |
-| **4** | Quality & resilience | Weeks 8–9 | 24h | Flakiness, caching, cross-browser | — |
-| **5** | MCP expansion | Weeks 10–12 | 32h | JMeter + Postman + Grafana + Sentry + security | QA engineer trusts it? |
-| **6** | Integration | Weeks 13–15 | 24h | CI/CD, HTML reports, Jira, watch mode | — |
-
-**Total: ~164 hours across 15 weeks**
-
----
-
-### Phase 0 — Proof of concept
-
-> **Goal:** Validate that LLM + Playwright MCP can produce useful QA output before investing in infrastructure.
-> **Time:** 3 days | **Effort:** 8 hours
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 0.1 | Set up Python project: pyproject.toml, `google-genai` SDK, `mcp` client | 1h | — |
-| 0.2 | Launch Playwright MCP as subprocess (`npx @playwright/mcp@latest --headless`), verify connection | 1h | 0.1 |
-| 0.3 | Write minimal script: hardcoded system prompt + Gemini 2.5 Pro + Playwright tools attached | 1h | 0.2 |
-| 0.4 | Implement basic tool-calling loop: send → catch tool_use → execute via MCP → feed result → repeat until end_turn | 2h | 0.3 |
-| 0.5 | Test on 3 sites: static site, login form, React SPA. Record behavior, findings, token usage | 2h | 0.4 |
-| 0.6 | Write findings to markdown report. Print cost breakdown to console | 1h | 0.5 |
-
-**Output:** ~100-line Python script. Takes a URL, produces a rough markdown report.
-
-#### 🚦 Gate 0
-
-Show the raw report to 2–3 people. Ask: "Is this useful?"
-- "This is garbage" → stop. You've spent 8 hours, not 8 weeks.
-- "Interesting but needs X" → proceed. Their feedback shapes skills.md.
-
----
-
-### Phase 1 — Foundation
-
-> **Goal:** Build the reusable core that every agent runs on. Prove the plugin architecture.
-> **Time:** Weeks 1–2 | **Effort:** 24 hours
-
-**1A — Agent runner**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 1.1 | Build `run_agent(agent_id, mission_brief, session)`: load manifest → load skills.md as system prompt → call LLM with filtered tools → handle tool loop → return structured output | 4h | 0.4 |
-| 1.2 | Add model routing: read `model_tier` from manifest → route to configured model via OpenAI-compatible interface | 2h | 1.1 |
-| 1.3 | Add tool filtering: read `requires_tools` from manifest → only pass matching MCP tools | 2h | 1.1 |
-
-**1B — Agent registry**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 1.4 | Build `registry.py`: scan `/agents/*/manifest.json`, validate against available MCP tools, build registry dict | 2h | 1.1 |
-| 1.5 | Define manifest.json Pydantic schema. All fields documented | 1h | 1.4 |
-| 1.6 | Create `/agents/orchestrator/` with manifest.json + initial skills.md (20–30 heuristic patterns) | 3h | 1.4 |
-
-**1C — Session & blackboard**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 1.7 | Build `session.py`: create session directory, state.json, conversations.md, evidence/ | 2h | — |
-| 1.8 | Build `blackboard.py`: `append(author, type, content)` + `query(types, limit)` for filtered excerpts | 2h | 1.7 |
-
-**1D — MCP client**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 1.9 | Build `mcp_client.py`: connect via stdio, `list_tools()`, `call_tool(name, params)`, timeout/retry handling | 3h | 0.2 |
-| 1.10 | Add `includeSnapshot: false` optimization for non-read actions (saves 70–80% tokens per action) | 1h | 1.9 |
-
-**1E — CLI**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 1.11 | Build `cli.py`: `qa-auto <url> [--prd] [--auth-cookie] [--browser] [--headless] [--budget]` | 2h | 1.1, 1.4, 1.7, 1.9 |
-
-#### 🚦 Gate 1
-
-Create a dummy `/agents/echo/` with manifest.json + skills.md. Does the registry discover it? Does `run_agent` execute it through the generic runner? If yes → plugin architecture works.
-
----
-
-### Phase 2 — Discovery & planning
-
-> **Goal:** Orchestrator crawls sites, builds site graphs, generates intelligent test plans.
-> **Time:** Weeks 3–4 | **Effort:** 20 hours
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 2.1 | Add discovery instructions to orchestrator skills.md: systematic crawling, form detection, auth wall identification | 3h | 1.6 |
-| 2.2 | Build `site_model.py`: pages[], forms[], nav_edges[], auth_boundaries[], api_endpoints[] | 3h | 2.1 |
-| 2.3 | Add tech stack detection: React/Next.js/Stripe/JWT from DOM + network patterns | 2h | 2.2 |
-| 2.4 | Expand skills.md with domain heuristics: login (8 patterns), checkout (12), search (5), nav (6), forms (10) | 4h | 2.1 |
-| 2.5 | Add PRD ingestion: load via --prd flag, include in orchestrator context, add comparison instructions | 2h | 1.11 |
-| 2.6 | Coverage map: compare test plan vs site graph → identify untested pages/forms | 2h | 2.2, 2.4 |
-| 2.7 | Two-pass self-critique: orchestrator reviews plan for gaps using structured checklist | 2h | 2.4 |
-| 2.8 | Build `tier1_locator.py`: parse snapshot → keyword match → score → return ref with confidence | 2h | 1.9 |
-
-#### 🚦 Gate 2
-
-Run on 5 real websites. Do site graphs capture all pages? Do test plans include heuristic-driven edge cases (not just happy paths)? If plans are shallow → invest more in skills.md before proceeding.
-
----
-
-### Phase 3 — Execution & verification (MVP)
-
-> **Goal:** Close the full loop. This is the hardest phase and produces the MVP.
-> **Time:** Weeks 5–7 | **Effort:** 32 hours
-
-**3A — Test generator agent**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 3.1 | Create `/agents/test_generator/` with manifest + skills.md (assertion templates, test data patterns) | 3h | 1.1 |
-| 3.2 | Add `invoke_agent` tool to orchestrator: our code catches it, runs target agent, returns result | 3h | 1.1, 1.4 |
-| 3.3 | Implement mission brief generation: PRD excerpt + page refs + blackboard + edge cases per invocation | 3h | 3.2, 2.5 |
-
-**3B — Test execution**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 3.4 | Orchestrator executes test steps via Playwright MCP, collects snapshots + console + network per flow | 4h | 3.1, 3.2 |
-| 3.5 | Inline execution for simple tests: orchestrator handles directly without invoking test_generator | 2h | 3.4 |
-| 3.6 | Auth flows: cookie injection, storage state file, manual login with persisted context | 3h | 3.4 |
-
-**3C — Verifier agent**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 3.7 | Create `/agents/verifier/` with manifest + skills.md (classification rules, bug report template) | 3h | 1.1 |
-| 3.8 | Functional verification: assertions + actuals → PASS/FAIL/FLAKY/WARNING with confidence. Batch 5 per call | 3h | 3.7 |
-| 3.9 | Visual verification: screenshots via vision-capable model on FAIL/WARNING only | 3h | 3.8 |
-| 3.10 | Bug report generation: structured JSON with reproduction steps, expected/actual, evidence paths | 2h | 3.8 |
-
-**3D — Report**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 3.11 | Final report: aggregate verdicts → report.json + report.md. Pass/fail counts, bug list, coverage stats, cost | 3h | 3.8, 3.10 |
-
-#### 🚦 Gate 3 (CRITICAL)
-
-Run on 3 real websites. For each:
-1. Does the system catch at least 1 real bug a human would agree is a bug?
-2. Is the false positive rate below 30%?
-3. Is the report actionable (could a developer fix bugs from it alone)?
-
-**If all pass → you have a working product. Everything after is enhancement.**
-
----
-
-### Phase 4 — Quality & resilience
-
-> **Goal:** Make it reliable on complex real-world sites. Reduce costs.
-> **Time:** Weeks 8–9 | **Effort:** 24 hours
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 4.1 | Locator Tier 2: LLM fallback when Tier 1 confidence < 0.7 (vision-capable model + screenshot) | 3h | 2.8 |
-| 4.2 | Shadow DOM, iframes, hover-reveal: detection patterns + retry logic | 3h | 4.1 |
-| 4.3 | Retry logic: FLAKY verdicts auto-retry 3x with fresh context. Stability scoring | 2h | 3.8 |
-| 4.4 | Context management: clear stale snapshots after extraction. 30–40% token reduction | 3h | 3.4 |
-| 4.5 | Prompt caching: skills.md + PRD as cached prefix. Verify hits. 90% savings on repeated context | 2h | 2.5 |
-| 4.6 | Sub-agent caching: skills.md cached across invocations within session | 1h | 4.5 |
-| 4.7 | "Always include" negative patterns: console errors, mixed content, auth bypass, XSS in every input | 3h | 2.4 |
-| 4.8 | Verifier feedback loop: per-site run history in site-models/{domain}.json. Enrich future runs | 3h | 3.11 |
-| 4.9 | --browser flag: chromium/firefox/webkit. Cross-browser testing | 2h | 1.11 |
-| 4.10 | --viewport flag: desktop/laptop/tablet/mobile. Responsive testing | 2h | 4.9 |
-
-#### 🚦 Gate 4
-
-Run on 3 complex SPAs (React, Next.js, Vue). For each:
-1. Flaky rate < 10% after retries?
-2. Cost < $4/run with caching enabled?
-3. Cross-browser tests pass on chromium + at least one alternate engine?
-
----
-
-### Phase 5 — MCP expansion
-
-> **Goal:** Expand from ~60% to ~75% QA coverage via additional MCP servers and plugin agents.
-> **Time:** Weeks 10–12 | **Effort:** 32 hours
-
-**5A — Multi-MCP infrastructure**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 5.1 | Multi-MCP connection: mcp_client.py manages 2+ servers. Tools namespaced (playwright.*, jmeter.*) | 3h | 1.9 |
-| 5.2 | API endpoint extraction: orchestrator logs network requests during discovery → filters to API endpoints | 2h | 2.2 |
-
-**5B — JMeter MCP + load testing**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 5.3 | Research jmeter-mcp-server: install, connect, list tools, understand schemas | 2h | 5.1 |
-| 5.4 | Create `/agents/load_tester/` (trigger: per_api_discovery). Skills: scenario templates, thresholds | 3h | 1.4, 5.3 |
-| 5.5 | Load test execution: create plans from discovered endpoints, run scenarios, parse p50/p95/p99 | 3h | 5.4, 5.2 |
-
-**5C — Postman MCP + API testing**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 5.6 | Research Postman MCP (official): connect, list tools | 2h | 5.1 |
-| 5.7 | Create `/agents/api_tester/` (trigger: per_api_discovery). Skills: REST validation, schema checking | 3h | 1.4, 5.6 |
-| 5.8 | API test execution: validate endpoints from discovery + PRD API specs | 2h | 5.7, 5.2 |
-
-**5D — Security surface agent**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 5.9 | Create `/agents/security_tester/` (trigger: per_form_discovery). Skills: OWASP Top 10 surface checks | 3h | 1.4 |
-| 5.10 | Security checks: XSS injection, header validation, auth bypass, open redirects | 2h | 5.9, 3.4 |
-
-**5E — Observability correlation (optional)**
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 5.11 | Grafana MCP connection: connect if configured, list_datasources to discover what's available | 2h | 5.1 |
-| 5.12 | Create `/agents/infra_observer/` (trigger: post_load_test). Skills: PromQL/LogQL/TraceQL correlation patterns | 3h | 5.11 |
-| 5.13 | Sentry MCP connection: OAuth via mcp.sentry.dev or stdio for self-hosted | 2h | 5.1 |
-| 5.14 | Create `/agents/error_observer/` (trigger: post_execution). Skills: error correlation, severity triage | 2h | 5.13 |
-
-#### 🚦 Gate 5
-
-Run the full system on a real product with a real PRD. Present to a QA engineer or engineering lead. Ask: "Would you trust this enough to reduce manual testing?" Their answer determines Phase 6 scope.
-
----
-
-### Phase 6 — Integration & productization
-
-> **Goal:** Production-ready, CI/CD integrated, usable by people other than you.
-> **Time:** Weeks 13–15 | **Effort:** 24 hours
-
-| ID | Task | Effort | Deps |
-|----|------|--------|------|
-| 6.1 | GitHub Action: trigger on PR/push, run qa-auto, post results as PR comment | 4h | 3.11 |
-| 6.2 | Webhook mode: `qa-auto serve --port 8080`. POST /run → QA session → results | 3h | 1.11 |
-| 6.3 | Incremental testing: diff site graph vs previous → test only changed pages (50–70% cost reduction) | 3h | 2.2, 4.8 |
-| 6.4 | HTML report: self-contained, embedded screenshots, filterable by verdict/severity | 4h | 3.11 |
-| 6.5 | Jira/Linear/GitHub Issues integration: auto-create tickets for FAIL verdicts | 3h | 3.10 |
-| 6.6 | Cost tracking: per-session token usage by agent, running total, budget cap alerts | 2h | 3.11 |
-| 6.7 | Config validation & documentation: schema validation for qa-auto.yaml, example config with annotated defaults | 2h | 1.11 |
-| 6.8 | Watch mode: re-run on schedule or webhook trigger. Continuous monitoring | 3h | 6.2 |
-
-#### 🚦 Gate 6
-
-Deploy GitHub Action on a real repo PR. Verify:
-1. Action triggers, runs qa-auto, and posts results as PR comment?
-2. HTML report renders correctly with embedded screenshots?
-3. Jira/Linear ticket auto-created for at least one FAIL verdict?
-
----
-
-## Dependency graph (critical path)
-
-```
-0.4 → 1.1 → 1.4 → 2.1 → 2.4 → 3.1 → 3.4 → 3.8 → 3.11
-                                  ↓
-                                skills.md quality determines EVERYTHING downstream
-```
-
-Every task on this path is a blocker. Tasks off the critical path (cross-browser, Grafana, Sentry) can be deferred without blocking progress. Invest time in skills.md heuristics (2.4) — weak heuristics produce weak tests regardless of how good the infrastructure is.
-
----
-
-## Cost optimization checklist
-
-Apply in Phase 4, but design for from Phase 1:
-
-- [ ] `includeSnapshot: false` on non-read actions (1.10) — 70–80% savings per action
-- [ ] Clear stale snapshots from context after extraction (4.4) — 30–40% of orchestrator input
-- [ ] Prompt caching for skills.md + PRD (4.5) — 90% on repeated context
-- [ ] Batch verifier calls: 5 verdicts per call instead of 1 (3.8) — 40→8 calls
-- [ ] Visual verification only on FAIL/WARNING (3.9) — avoid 5–8K tokens per screenshot on passes
-- [ ] Incremental testing on repeat runs (6.3) — 50–70% cost reduction
-- [ ] Tier 1 locator handles 80% of element finding at $0 cost (2.8)
-- [ ] Inline execution for simple tests (3.5) — avoids sub-agent overhead
-- [ ] Route utility agents to cheaper model tier when available (1.2)
-- [ ] Per-session budget cap, abort gracefully (6.6)
-
----
-
-## Manifest schema
-
-```json
-{
-  "id": "security_tester",
-  "name": "Security Surface Tester",
-  "version": "1.0.0",
-  "type": "tester",
-  "trigger": "per_form_discovery",
-  "requires_tools": [
-    "playwright.browser_type",
-    "playwright.browser_snapshot",
-    "playwright.browser_console_messages"
-  ],
-  "model_tier": "sub",
-  "input_format": "mission_brief_markdown",
-  "output_format": "findings_json",
-  "description": "OWASP Top 10 surface checks on discovered forms"
-}
-```
-
-**Trigger types:**
-- `on_demand` — orchestrator invokes explicitly
-- `per_page_discovery` — fires for each new page discovered
-- `per_form_discovery` — fires for each form discovered
-- `per_api_discovery` — fires when API endpoints discovered
-- `post_execution` — fires after test execution completes
-- `post_load_test` — fires after load tester completes
-
----
-
-## Testing coverage matrix
-
-| Testing type | AI coverage | MCP server | Phase |
-|-------------|------------|------------|-------|
-| Smoke testing | 95% | Playwright | 3 |
-| Sanity testing | 95% | Playwright | 3 |
-| Regression testing | 90% | Playwright | 3 |
-| End-to-end testing | 90% | Playwright | 3 |
-| Cross-browser | 85% | Playwright | 4 |
-| Responsive design | 85% | Playwright | 4 |
-| API testing | 85% | Postman | 5 |
-| Boundary/edge case | 80% | Playwright | 3 |
-| Visual regression | 80% | Playwright | 3 |
-| Integration testing | 75% | Playwright | 3 |
-| Load/stress testing | 70% | JMeter | 5 |
-| Performance (client) | 65% | Playwright + JMeter | 5 |
-| Localization | 50% | Playwright | Future |
-| Security (surface) | 50% | Playwright + Postman | 5 |
-| Accessibility | 45% | Playwright | Future |
-| UAT | 40% | Playwright | 3 |
-| Exploratory | 35% | Playwright | 3 |
-| Usability | 0% | N/A | Never (human) |
-
-**Overall: ~60% with Playwright only → ~75% with all MCP servers**
-
----
-
-## Competitive landscape
-
-| Competitor | What they do | What we do differently |
-|-----------|-------------|----------------------|
-| **Bug0** ($250–2500/mo) | AI agents + human FDE. Browser E2E. Self-healing. Playwright-based. | We add load testing, API testing, infra/error correlation, PRD-driven planning. Self-hosted. |
-| **QA.tech** | AI learns site, autonomous regression. SaaS. | We add multi-agent architecture, plugin registry, observability integration. |
-| **mabl** | AI-enhanced test automation. Enterprise. Strong product. | mabl requires defining flows. We discover autonomously. We add performance/API/security. |
-| **Functionize** | Enterprise AI test automation. Self-healing. | Similar to mabl comparison. We're open/self-hosted, they're SaaS. |
-| **OpenObserve "Council"** | Multi-agent with Claude Code. Internal tool. | Most architecturally similar. But no MCP, no load testing, no observability correlation, not general-purpose. |
-| **Spur** | E-commerce specific. Autonomous agents. | We're general-purpose. They're vertical. |
-
-**Our actual moat:** Nobody unifies functional testing + load testing + API testing + infrastructure correlation + application error correlation into one AI-orchestrated system. Everyone else does one piece.
 
 ---
 
@@ -606,63 +190,112 @@ Apply in Phase 4, but design for from Phase 1:
 ### Prerequisites
 
 ```bash
-# Python 3.11+
-python --version
+python --version    # 3.11+
+node --version      # for Playwright MCP via npx
 
-# Node.js (for Playwright MCP)
-node --version
-
-# LLM API key (Gemini for prototyping, Anthropic for later phases)
-export GEMINI_API_KEY="AIza..."
-# export ANTHROPIC_API_KEY="sk-ant-..."  # later phases
+# AWS credentials (one of):
+export AWS_ACCESS_KEY_ID="..."
+export AWS_SECRET_ACCESS_KEY="..."
+export AWS_DEFAULT_REGION="us-east-1"
+# or configure ~/.aws/credentials
 ```
 
-### Phase 0 — Quick start
+### Install and run
 
 ```bash
-# Clone and setup
 git clone <repo-url> && cd autonomous-qa
 python -m venv .venv && source .venv/bin/activate
-pip install google-genai mcp pydantic pyyaml
+pip install -e .
 
 # Verify Playwright MCP works
 npx @playwright/mcp@latest --headless
 # Should print available tools, then Ctrl+C
 
-# Run the proof of concept
-python src/phase0.py https://example.com
-```
-
-### Phase 1+ — Full setup
-
-```bash
-pip install -e ".[dev]"
+# Copy and edit config
 cp qa-auto.example.yaml qa-auto.yaml
-# Edit qa-auto.yaml with your settings
 
-qa-auto https://staging.myapp.com --prd ./requirements.md
+# Run
+qa-auto https://toscrape.com
+qa-auto https://staging.myapp.com --prd ./requirements.md --headless false
+```
+
+### Output
+
+Each session writes to `sessions/{domain}_{timestamp}/`:
+
+| File | Description |
+|------|-------------|
+| `report.html` | Full HTML report with charts, severity breakdown, per-finding details |
+| `report.md` | Markdown summary — shareable in PRs, Slack, Jira |
+| `site_map.json` | Discovered pages, forms, auth walls, tech stack |
+| `findings.json` | Raw test results from TestGen |
+| `verdicts.json` | Classified results from Verifier |
+| `raw_conversation.json` | Full agent conversation log for debugging |
+| `cost.json` | Token usage and estimated USD cost |
+
+---
+
+## Testing coverage (this PoC)
+
+| Testing type | AI coverage | Notes |
+|-------------|------------|-------|
+| Smoke testing | 95% | |
+| Sanity testing | 95% | |
+| Regression testing | 90% | |
+| End-to-end testing | 90% | |
+| Boundary / edge case | 80% | |
+| Visual regression | 80% | Screenshot comparison |
+| Security surface | 50% | XSS, auth bypass, open redirects — not deep pentest |
+| Accessibility | 45% | Basic checks only |
+| Usability | 0% | Human-only, always |
+
+**Overall: ~60–65% of manual QA effort covered in this PoC.**
+
+---
+
+## What's next (post-PoC)
+
+The PoC proves the multi-agent architecture works end-to-end on real sites. The next phase adds:
+
+- **Cross-browser + responsive** — run TestGen on Firefox, WebKit, mobile viewports
+- **Load testing** — JMeter MCP integration for API endpoint stress testing
+- **API testing** — Postman MCP for REST endpoint validation
+- **Observability correlation** — Grafana + Sentry MCP to correlate test failures with infra metrics and application errors
+- **CI/CD integration** — GitHub Action, webhook mode, auto-create Jira tickets on FAIL
+- **Incremental testing** — diff site graph vs previous run, test only changed pages (50–70% cost reduction)
+
+---
+
+## Manifest schema
+
+```json
+{
+  "id": "crawler",
+  "name": "Site Crawler",
+  "version": "1.0.0",
+  "type": "sub-agent",
+  "requires_tools": ["browser_navigate", "browser_snapshot", "browser_click",
+                     "browser_console_messages", "browser_network_requests"],
+  "model_tier": "sub",
+  "input_format": "mission_brief_markdown",
+  "output_format": "site_map_json",
+  "description": "Systematically maps a website: all pages, forms, auth walls, tech stack"
+}
 ```
 
 ---
 
-## Definition of done (per phase)
+## Competitive landscape
 
-| Phase | Done when... |
-|-------|-------------|
-| 0 | Script runs on 3 sites, produces readable output, stays within free-tier limits |
-| 1 | `qa-auto <url>` launches, connects to MCP, runs orchestrator, new agents discoverable by folder |
-| 2 | Site graph captures all pages on 5 test sites, plans include heuristic-driven edge cases |
-| 3 | Full session produces report with real bugs, false positive rate < 30%, report is actionable |
-| 4 | Handles complex SPAs, flaky rate < 10% after retries, cost < $4/run with caching, cross-browser passes |
-| 5 | Load tests run on discovered APIs, API endpoints validated, security checks find issues on test sites, Grafana/Sentry correlation works when configured |
-| 6 | GitHub Action runs on PR, HTML report renders, Jira ticket created for FAIL, cost tracked |
+| Competitor | What they do | What we do differently |
+|-----------|-------------|----------------------|
+| **Bug0** ($250–2500/mo) | AI agents + browser E2E. Playwright-based. | Multi-agent architecture with compartmentalized context. Self-hosted. Open. |
+| **QA.tech** | AI learns site, autonomous regression. SaaS. | Two-phase discovery → test. PRD-driven test strategy. |
+| **mabl** | AI-enhanced test automation. Enterprise. | mabl requires defining flows. We discover autonomously. |
+| **Functionize** | Enterprise AI test automation. Self-healing. | SaaS, expensive. We're open, self-hosted, extensible. |
 
----
-
-## License
-
-TBD
+**Our actual moat:** A multi-agent system where each agent has a single job, fresh context, and domain-specific skills. The orchestrator is a pure coordinator. The result is a system that scales in depth (better skills.md = better tests) without growing in complexity.
 
 ---
 
-*Built by Amitabh | April 2026*
+*Built by Amitabh · April 2026*

@@ -1,0 +1,12 @@
+{
+  "id": "report_generator",
+  "name": "Report Generator",
+  "version": "1.0.0",
+  "type": "sub-agent",
+  "trigger": "post_verification",
+  "requires_tools": [],
+  "model_tier": "sub",
+  "input_format": "mission_brief_markdown",
+  "output_format": "html_and_markdown",
+  "description": "Produces a self-contained HTML report with charts and a markdown summary from verified findings."
+}

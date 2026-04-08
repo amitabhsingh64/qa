@@ -1,20 +1,12 @@
 {
   "id": "orchestrator",
   "name": "QA Orchestrator",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "orchestrator",
   "trigger": "on_demand",
-  "requires_tools": [
-    "browser_navigate",
-    "browser_snapshot",
-    "browser_click",
-    "browser_type",
-    "browser_screenshot",
-    "browser_console_messages",
-    "browser_network_requests"
-  ],
+  "requires_tools": [],
   "model_tier": "primary",
-  "input_format": "mission_brief_markdown",
-  "output_format": "findings_json",
-  "description": "Plans, delegates, and coordinates all QA testing activity"
+  "input_format": "url_and_prd",
+  "output_format": "session_complete",
+  "description": "Coordinates QA by delegating to sub-agents via invoke_agent. Never calls Playwright directly."
 }
