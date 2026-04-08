@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "sub-agent",
   "trigger": "on_demand",
+  "max_iterations": 50,
   "requires_tools": [
     "browser_navigate",
     "browser_snapshot",

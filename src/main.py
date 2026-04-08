@@ -22,8 +22,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT_MODEL = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-DEFAULT_REGION = "us-east-1"
+DEFAULT_MODEL     = "anthropic.claude-3-opus-20240229-v1:0"
+DEFAULT_SUB_MODEL = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+DEFAULT_REGION    = "us-east-1"
 DEFAULT_OUTPUT_DIR = "./sessions/"
 
 
@@ -48,8 +49,9 @@ async def main(
     # ------------------------------------------------------------------
     # Resolve model and region
     # ------------------------------------------------------------------
-    model_name = model or os.environ.get("BEDROCK_MODEL", DEFAULT_MODEL)
-    region = os.environ.get("AWS_DEFAULT_REGION", DEFAULT_REGION)
+    model_name     = model or os.environ.get("BEDROCK_MODEL", DEFAULT_MODEL)
+    sub_model_name = os.environ.get("BEDROCK_SUB_MODEL", DEFAULT_SUB_MODEL)
+    region         = os.environ.get("AWS_DEFAULT_REGION", DEFAULT_REGION)
 
     # ------------------------------------------------------------------
     # Load PRD if provided
@@ -165,6 +167,7 @@ async def main(
                     mcp_session=mcp_session,
                     bedrock_client=bedrock_client,
                     model_name=model_name,
+                    sub_model_name=sub_model_name,
                     token_usage=token_usage,
                     verbose=True,
                 )

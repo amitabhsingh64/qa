@@ -5,6 +5,7 @@
   "type": "orchestrator",
   "trigger": "on_demand",
   "requires_tools": [],
+  "max_iterations": 50,
   "model_tier": "primary",
   "input_format": "url_and_prd",
   "output_format": "session_complete",

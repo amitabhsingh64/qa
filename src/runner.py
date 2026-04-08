@@ -29,8 +29,7 @@ from src.tools import execute_tool_call, mcp_tools_to_bedrock
 
 AGENTS_DIR = Path(__file__).parent.parent / "agents"
 
-ORCHESTRATOR_MAX_ITER = 20
-SUB_AGENT_MAX_ITER = 25  # hard cap — hitting this means skills.md needs attention
+_DEFAULT_MAX_ITER = 25  # fallback if manifest is missing max_iterations
 
 # Module-level agent cache: {agent_id: {"skills": str, "manifest": dict}}
 # Loaded once per session; call clear_cache() between sessions or during development.
@@ -81,6 +80,7 @@ async def run_qa_loop(
     mcp_session,
     bedrock_client,
     model_name: str,
+    sub_model_name: str,
     token_usage: TokenUsage,
     verbose: bool = True,
 ) -> tuple[str, list[dict], dict[str, str]]:
@@ -103,9 +103,14 @@ async def run_qa_loop(
 
     if verbose:
         print(f"  Playwright MCP: {len(all_mcp_tools)} tools available")
+        print(f"  Orchestrator   : {model_name}")
+        print(f"  Sub-agents     : {sub_model_name}")
         print()
 
     orchestrator_skills = _load_skills("orchestrator")
+    orchestrator_max_iter = _load_agent("orchestrator")["manifest"].get(
+        "max_iterations", _DEFAULT_MAX_ITER
+    )
     initial_message = build_orchestrator_prompt(url, prd_content)
 
     messages: list[dict] = [
@@ -117,7 +122,7 @@ async def run_qa_loop(
     sub_agent_results: dict[str, str] = {}
     final_text = ""
 
-    for iteration in range(1, ORCHESTRATOR_MAX_ITER + 1):
+    for iteration in range(1, orchestrator_max_iter + 1):
         if verbose:
             print(f"[orchestrator iter {iteration:02d}]", end=" ", flush=True)
 
@@ -190,7 +195,7 @@ async def run_qa_loop(
                     all_mcp_tools=all_mcp_tools,
                     mcp_session=mcp_session,
                     bedrock_client=bedrock_client,
-                    model_name=model_name,
+                    model_name=sub_model_name,
                     token_usage=token_usage,
                     verbose=verbose,
                 )
@@ -239,7 +244,9 @@ async def run_sub_agent(
 
     Returns the sub-agent's final text output (structured JSON expected).
     """
-    skills = _load_skills(agent_id)
+    agent_data  = _load_agent(agent_id)
+    skills      = agent_data["skills"]
+    max_iter    = agent_data["manifest"].get("max_iterations", _DEFAULT_MAX_ITER)
     agent_tools = _filter_tools(agent_id, all_mcp_tools)
 
     messages: list[dict] = [
@@ -249,7 +256,7 @@ async def run_sub_agent(
     tool_config = {"tools": agent_tools} if agent_tools else None
     final_text = ""
 
-    for iteration in range(1, SUB_AGENT_MAX_ITER + 1):
+    for iteration in range(1, max_iter + 1):
         if verbose:
             print(f"    [{agent_id} {iteration:02d}]", end=" ", flush=True)
 
@@ -310,13 +317,84 @@ async def run_sub_agent(
 
         messages.append({"role": "user", "content": tool_result_blocks})
     else:
-        # for...else: loop completed all iterations without a break (cap hit)
+        # for...else fires when the loop exhausted all iterations without a break.
+        # Make one final no-tool call asking for a best-effort summary of partial work.
         print(
-            f"\n  WARNING: {agent_id} hit the {SUB_AGENT_MAX_ITER}-iteration cap. "
-            f"Review its skills.md — it may be looping or not terminating cleanly."
+            f"\n  WARNING: {agent_id} hit its {max_iter}-iteration cap. "
+            f"Requesting best-effort summary of partial work..."
+        )
+        final_text = await _request_cap_summary(
+            agent_id=agent_id,
+            skills=skills,
+            messages=messages,
+            last_tool_use_blocks=tool_use_blocks,
+            bedrock_client=bedrock_client,
+            model_name=model_name,
+            token_usage=token_usage,
         )
 
     return final_text
+
+
+async def _request_cap_summary(
+    agent_id: str,
+    skills: str,
+    messages: list[dict],
+    last_tool_use_blocks: list[dict],
+    bedrock_client,
+    model_name: str,
+    token_usage: TokenUsage,
+) -> str:
+    """
+    Called when a sub-agent hits its iteration cap.
+
+    Makes one final no-tool Bedrock call asking the agent to produce a
+    best-effort summary of partial work rather than returning empty/null.
+    """
+    in_progress = (
+        ", ".join(t["name"] for t in last_tool_use_blocks)
+        if last_tool_use_blocks
+        else "unknown"
+    )
+
+    cap_prompt = (
+        f"You have reached your iteration limit and must stop immediately. "
+        f"Do not make any more tool calls.\n\n"
+        f"You were last attempting: {in_progress}\n\n"
+        f"Based on everything you have done so far in this session, produce a "
+        f"best-effort summary. Your output must be valid JSON with this structure "
+        f"merged into your normal output schema:\n\n"
+        f'{{\n'
+        f'  "_capped": true,\n'
+        f'  "_cap_status": {{\n'
+        f'    "what_was_completed": "summary of work fully finished",\n'
+        f'    "what_was_in_progress": "what you were doing when the cap fired",\n'
+        f'    "what_was_skipped": "parts of the mission brief never addressed",\n'
+        f'    "narrative": "2-3 sentences in plain language explaining what happened"\n'
+        f'  }},\n'
+        f'  ... rest of your normal output with whatever partial results you have\n'
+        f'}}\n\n'
+        f"Output only JSON. No prose. No tool calls."
+    )
+
+    summary_messages = messages + [
+        {"role": "user", "content": [{"text": cap_prompt}]}
+    ]
+
+    response = bedrock_client.converse(
+        modelId=model_name,
+        system=[{"text": skills}],
+        messages=summary_messages,
+        inferenceConfig={"maxTokens": 8192, "temperature": 0.0},
+        # No toolConfig — this must be a pure text response
+    )
+    token_usage.add(response.get("usage"), agent_id=agent_id)
+
+    result = ""
+    for block in response["output"]["message"].get("content", []):
+        if "text" in block:
+            result += block["text"]
+    return result
 
 
 def _load_agent(agent_id: str) -> dict:

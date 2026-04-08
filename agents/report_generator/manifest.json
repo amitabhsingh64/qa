@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "sub-agent",
   "trigger": "post_verification",
+  "max_iterations": 5,
   "requires_tools": [],
   "model_tier": "sub",
   "input_format": "mission_brief_markdown",
