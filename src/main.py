@@ -22,8 +22,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT_MODEL     = "us.anthropic.claude-opus-4-5-20251101-v1:0"
-DEFAULT_SUB_MODEL = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+DEFAULT_MODEL     = "global.anthropic.claude-opus-4-5-20251101-v1:0"
+DEFAULT_SUB_MODEL = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 DEFAULT_REGION    = "us-east-1"
 DEFAULT_OUTPUT_DIR = "./sessions/"
 
