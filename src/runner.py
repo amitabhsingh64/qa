@@ -21,8 +21,10 @@ invoke_agent flow:
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
+from src.config import RetryConfig
 from src.prompts import build_orchestrator_prompt
 from src.token_usage import TokenUsage
 from src.tools import execute_tool_call, mcp_tools_to_bedrock
@@ -82,6 +84,7 @@ async def run_qa_loop(
     model_name: str,
     sub_model_name: str,
     token_usage: TokenUsage,
+    retry_config: RetryConfig | None = None,
     verbose: bool = True,
 ) -> tuple[str, list[dict], dict[str, str]]:
     """
@@ -97,6 +100,9 @@ async def run_qa_loop(
     # Clear the agent cache at session start so skills.md edits take effect
     # without restarting the process (important during development)
     clear_cache()
+
+    if retry_config is None:
+        retry_config = RetryConfig()
 
     tools_response = await mcp_session.list_tools()
     all_mcp_tools = mcp_tools_to_bedrock(tools_response.tools)
@@ -186,24 +192,67 @@ async def run_qa_loop(
                 agent_id = tool_use["input"]["agent_id"]
                 mission_brief = tool_use["input"]["mission_brief"]
 
-                if verbose:
-                    print(f"\n  → [{agent_id}] starting...")
-
-                result_text = await run_sub_agent(
-                    agent_id=agent_id,
-                    mission_brief=mission_brief,
-                    all_mcp_tools=all_mcp_tools,
-                    mcp_session=mcp_session,
-                    bedrock_client=bedrock_client,
-                    model_name=sub_model_name,
-                    token_usage=token_usage,
-                    verbose=verbose,
+                # ----------------------------------------------------------
+                # Retry budget enforcement
+                # ----------------------------------------------------------
+                prior_invocations = token_usage.get_invocations(agent_id)
+                attempt = len(prior_invocations) + 1
+                total_retries = sum(
+                    1 for inv in token_usage.get_invocations()
+                    if inv["attempt"] > 1
                 )
 
-                sub_agent_results[agent_id] = result_text
+                if attempt > retry_config.max_attempts_per_agent:
+                    result_text = json.dumps({
+                        "status": "error",
+                        "error": "retry_budget_exceeded",
+                        "message": (
+                            f"Agent {agent_id} has been invoked {len(prior_invocations)} "
+                            f"time(s), which is the per-agent limit of "
+                            f"{retry_config.max_attempts_per_agent}."
+                        ),
+                        "agent_id": agent_id,
+                    })
+                    if verbose:
+                        print(f"\n  ✗ [{agent_id}] retry budget exceeded (attempt {attempt} > {retry_config.max_attempts_per_agent})\n")
+                elif attempt > 1 and total_retries >= retry_config.max_total_retries_per_session:
+                    result_text = json.dumps({
+                        "status": "error",
+                        "error": "session_retry_budget_exceeded",
+                        "message": (
+                            f"Session has used {total_retries} retry/retries, which is "
+                            f"the session limit of {retry_config.max_total_retries_per_session}."
+                        ),
+                    })
+                    if verbose:
+                        print(f"\n  ✗ [{agent_id}] session retry budget exceeded ({total_retries} retries used)\n")
+                else:
+                    previous_inv_id = (
+                        prior_invocations[-1]["invocation_id"]
+                        if prior_invocations else None
+                    )
 
-                if verbose:
-                    print(f"  ← [{agent_id}] done ({len(result_text)} chars)\n")
+                    if verbose:
+                        attempt_label = f" (attempt {attempt})" if attempt > 1 else ""
+                        print(f"\n  → [{agent_id}] starting{attempt_label}...")
+
+                    result_text = await run_sub_agent(
+                        agent_id=agent_id,
+                        mission_brief=mission_brief,
+                        all_mcp_tools=all_mcp_tools,
+                        mcp_session=mcp_session,
+                        bedrock_client=bedrock_client,
+                        model_name=sub_model_name,
+                        token_usage=token_usage,
+                        attempt=attempt,
+                        previous_invocation_id=previous_inv_id,
+                        verbose=verbose,
+                    )
+
+                    sub_agent_results[agent_id] = result_text
+
+                    if verbose:
+                        print(f"  ← [{agent_id}] done ({len(result_text)} chars)\n")
 
                 conversation_log.append({
                     "role": "sub_agent_result",
@@ -232,6 +281,8 @@ async def run_sub_agent(
     bedrock_client,
     model_name: str,
     token_usage: TokenUsage,
+    attempt: int = 1,
+    previous_invocation_id: str | None = None,
     verbose: bool = True,
 ) -> str:
     """
@@ -253,87 +304,146 @@ async def run_sub_agent(
         {"role": "user", "content": [{"text": mission_brief}]}
     ]
 
-    tool_config = {"tools": agent_tools} if agent_tools else None
-    final_text = ""
+    tool_config     = {"tools": agent_tools} if agent_tools else None
+    final_text      = ""
+    started_at      = datetime.now(timezone.utc)
+    tokens_before   = token_usage.snapshot_tokens(agent_id)
+    iterations_used = 0
+    inv_status      = "complete"
+    capped_summary  = None
+    tool_use_blocks: list[dict] = []
 
-    for iteration in range(1, max_iter + 1):
-        if verbose:
-            print(f"    [{agent_id} {iteration:02d}]", end=" ", flush=True)
+    # Open the invocation record before the first LLM call so it is tracked
+    # even if the call raises an exception.
+    inv_id = token_usage.begin_invocation(
+        agent_id=agent_id,
+        attempt=attempt,
+        previous_invocation_id=previous_invocation_id,
+        started_at=started_at,
+    )
 
-        call_kwargs: dict = dict(
-            modelId=model_name,
-            system=[{"text": skills}],
-            messages=messages,
-            inferenceConfig={"maxTokens": 8192, "temperature": 1.0},
-        )
-        if tool_config:
-            call_kwargs["toolConfig"] = tool_config
+    try:
+        from botocore.exceptions import ReadTimeoutError as BedrockReadTimeout
+    except ImportError:
+        BedrockReadTimeout = OSError  # fallback — should never happen
 
-        response = bedrock_client.converse(**call_kwargs)
-        token_usage.add(response.get("usage"), agent_id=agent_id)
-
-        stop_reason = response.get("stopReason", "")
-        assistant_message = response["output"]["message"]
-        messages.append(assistant_message)
-
-        text_parts: list[str] = []
-        tool_use_blocks: list[dict] = []
-        for block in assistant_message.get("content", []):
-            if "text" in block:
-                text_parts.append(block["text"])
-            elif "toolUse" in block:
-                tool_use_blocks.append(block["toolUse"])
-
-        text_content = "\n".join(text_parts)
-
-        if verbose:
-            tool_names = ", ".join(t["name"] for t in tool_use_blocks)
-            print(f"stop={stop_reason} tools=[{tool_names}]")
-
-        if stop_reason == "end_turn" and not tool_use_blocks:
-            final_text = text_content
-            break
-
-        if not tool_use_blocks:
-            final_text = text_content
-            break
-
-        # Execute tools and feed results back for the next iteration
-        tool_result_blocks: list[dict] = []
-        for tool_use in tool_use_blocks:
-            result_text = await execute_tool_call(
-                mcp_session, tool_use["name"], tool_use["input"]
-            )
+    try:
+        for iteration in range(1, max_iter + 1):
+            iterations_used = iteration
             if verbose:
-                preview = result_text[:120].replace("\n", " ")
-                print(f"      {tool_use['name']}: {preview}")
+                print(f"    [{agent_id} {iteration:02d}]", end=" ", flush=True)
 
-            tool_result_blocks.append({
-                "toolResult": {
-                    "toolUseId": tool_use["toolUseId"],
-                    "content": [{"text": result_text}],
-                }
-            })
+            call_kwargs: dict = dict(
+                modelId=model_name,
+                system=[{"text": skills}],
+                messages=messages,
+                inferenceConfig={"maxTokens": 8192, "temperature": 1.0},
+            )
+            if tool_config:
+                call_kwargs["toolConfig"] = tool_config
 
-        messages.append({"role": "user", "content": tool_result_blocks})
-    else:
-        # for...else fires when the loop exhausted all iterations without a break.
-        # Make one final no-tool call asking for a best-effort summary of partial work.
+            response = bedrock_client.converse(**call_kwargs)
+            token_usage.add(response.get("usage"), agent_id=agent_id)
+
+            stop_reason = response.get("stopReason", "")
+            assistant_message = response["output"]["message"]
+            messages.append(assistant_message)
+
+            text_parts: list[str] = []
+            tool_use_blocks = []
+            for block in assistant_message.get("content", []):
+                if "text" in block:
+                    text_parts.append(block["text"])
+                elif "toolUse" in block:
+                    tool_use_blocks.append(block["toolUse"])
+
+            text_content = "\n".join(text_parts)
+
+            if verbose:
+                tool_names = ", ".join(t["name"] for t in tool_use_blocks)
+                print(f"stop={stop_reason} tools=[{tool_names}]")
+
+            if stop_reason == "end_turn" and not tool_use_blocks:
+                final_text = text_content
+                inv_status = "complete"
+                break
+
+            if not tool_use_blocks:
+                final_text = text_content
+                inv_status = "complete"
+                break
+
+            # Execute tools and feed results back for the next iteration
+            tool_result_blocks: list[dict] = []
+            for tool_use in tool_use_blocks:
+                result_text = await execute_tool_call(
+                    mcp_session, tool_use["name"], tool_use["input"]
+                )
+                if verbose:
+                    preview = result_text[:120].replace("\n", " ")
+                    print(f"      {tool_use['name']}: {preview}")
+
+                tool_result_blocks.append({
+                    "toolResult": {
+                        "toolUseId": tool_use["toolUseId"],
+                        "content": [{"text": result_text}],
+                    }
+                })
+
+            messages.append({"role": "user", "content": tool_result_blocks})
+        else:
+            # for...else fires when the loop exhausted all iterations without a break.
+            inv_status = "capped"
+            print(
+                f"\n  WARNING: {agent_id} hit its {max_iter}-iteration cap. "
+                f"Requesting best-effort summary of partial work..."
+            )
+            final_text, capped_summary = await _request_cap_summary(
+                agent_id=agent_id,
+                skills=skills,
+                messages=messages,
+                last_tool_use_blocks=tool_use_blocks,
+                bedrock_client=bedrock_client,
+                model_name=model_name,
+                token_usage=token_usage,
+            )
+    except BedrockReadTimeout as exc:
+        inv_status = "error"
         print(
-            f"\n  WARNING: {agent_id} hit its {max_iter}-iteration cap. "
-            f"Requesting best-effort summary of partial work..."
+            f"\n  ERROR: [{agent_id}] Bedrock read timeout after {iterations_used} iterations. "
+            f"Returning error result to orchestrator. ({exc})"
         )
-        final_text = await _request_cap_summary(
-            agent_id=agent_id,
-            skills=skills,
-            messages=messages,
-            last_tool_use_blocks=tool_use_blocks,
-            bedrock_client=bedrock_client,
-            model_name=model_name,
-            token_usage=token_usage,
+        final_text = json.dumps({
+            "status": "error",
+            "error": "bedrock_read_timeout",
+            "message": (
+                f"Bedrock read timed out during iteration {iterations_used}. "
+                "The model may have been generating a very long response."
+            ),
+            "agent_id": agent_id,
+            "iterations_completed": iterations_used,
+        })
+    except Exception:
+        inv_status = "error"
+        raise
+    finally:
+        token_usage.close_invocation(
+            inv_id=inv_id,
+            status=inv_status,
+            iterations_used=iterations_used,
+            iterations_limit=max_iter,
+            started_at=started_at,
+            tokens_before=tokens_before,
+            capped_summary=capped_summary,
         )
 
     return final_text
+
+
+_CAP_FALLBACK_SUMMARY = {
+    "in_progress": "unknown — agent did not produce a valid summary",
+    "narrative": "Agent reached iteration limit and could not produce a summary.",
+}
 
 
 async def _request_cap_summary(
@@ -344,37 +454,38 @@ async def _request_cap_summary(
     bedrock_client,
     model_name: str,
     token_usage: TokenUsage,
-) -> str:
+) -> tuple[str, dict]:
     """
     Called when a sub-agent hits its iteration cap.
 
-    Makes one final no-tool Bedrock call asking the agent to produce a
-    best-effort summary of partial work rather than returning empty/null.
+    Appends a final user message instructing the agent to produce a structured
+    summary of partial work, makes one no-tool Bedrock call, then parses the
+    response as JSON.
+
+    Returns:
+        (output_str, capped_summary) where:
+        - output_str: JSON string to return to the orchestrator as the agent's output
+        - capped_summary: metadata dict for the invocation record
     """
-    in_progress = (
+    in_progress_tools = (
         ", ".join(t["name"] for t in last_tool_use_blocks)
         if last_tool_use_blocks
         else "unknown"
     )
 
     cap_prompt = (
-        f"You have reached your iteration limit and must stop immediately. "
-        f"Do not make any more tool calls.\n\n"
-        f"You were last attempting: {in_progress}\n\n"
-        f"Based on everything you have done so far in this session, produce a "
-        f"best-effort summary. Your output must be valid JSON with this structure "
-        f"merged into your normal output schema:\n\n"
-        f'{{\n'
-        f'  "_capped": true,\n'
-        f'  "_cap_status": {{\n'
-        f'    "what_was_completed": "summary of work fully finished",\n'
-        f'    "what_was_in_progress": "what you were doing when the cap fired",\n'
-        f'    "what_was_skipped": "parts of the mission brief never addressed",\n'
-        f'    "narrative": "2-3 sentences in plain language explaining what happened"\n'
-        f'  }},\n'
-        f'  ... rest of your normal output with whatever partial results you have\n'
-        f'}}\n\n'
-        f"Output only JSON. No prose. No tool calls."
+        "You have reached your iteration limit. Stop immediately — do not call any tools.\n\n"
+        f"You were last attempting: {in_progress_tools}\n\n"
+        "Produce a JSON summary of your partial work. Your response must be a single "
+        "valid JSON object with exactly these fields:\n\n"
+        "{\n"
+        '  "status": "capped",\n'
+        '  "completed": { ... your normal output schema with only what you fully finished ... },\n'
+        '  "in_progress": { "description": "what you were doing when stopped" },\n'
+        '  "skipped": ["item from mission brief never addressed", ...],\n'
+        '  "narrative": "2-3 sentences in plain English explaining what happened"\n'
+        "}\n\n"
+        "Output only the JSON object. No prose, no markdown fences, no tool calls."
     )
 
     summary_messages = messages + [
@@ -386,15 +497,65 @@ async def _request_cap_summary(
         system=[{"text": skills}],
         messages=summary_messages,
         inferenceConfig={"maxTokens": 8192, "temperature": 0.0},
-        # No toolConfig — this must be a pure text response
+        # No toolConfig — agent must respond with text only
     )
     token_usage.add(response.get("usage"), agent_id=agent_id)
 
-    result = ""
+    raw = ""
     for block in response["output"]["message"].get("content", []):
         if "text" in block:
-            result += block["text"]
-    return result
+            raw += block["text"]
+
+    # Strip markdown fences if the model wrapped the JSON anyway
+    clean = raw.strip()
+    if clean.startswith("```"):
+        lines = clean.splitlines()
+        clean = "\n".join(
+            lines[1:-1] if lines[-1].strip() == "```" else lines[1:]
+        )
+
+    try:
+        parsed = json.loads(clean)
+        parsed["status"] = "capped"  # enforce — agent may have omitted it
+
+        completed = parsed.get("completed", {})
+        skipped   = parsed.get("skipped", [])
+
+        # completed_count: find the first list value in completed, else count keys
+        completed_count = 0
+        for v in completed.values() if isinstance(completed, dict) else []:
+            if isinstance(v, list):
+                completed_count = len(v)
+                break
+        if completed_count == 0 and isinstance(completed, dict):
+            completed_count = len(completed)
+
+        capped_summary = {
+            "completed_count": completed_count,
+            "skipped_count":   len(skipped) if isinstance(skipped, list) else 0,
+            "in_progress":     parsed.get("in_progress", {}).get("description", "unknown"),
+            "narrative":       parsed.get("narrative", ""),
+        }
+
+        return json.dumps(parsed), capped_summary
+
+    except (json.JSONDecodeError, Exception) as exc:
+        print(f"  WARNING: {agent_id} cap summary JSON parse failed ({exc}). Using fallback.")
+
+        fallback = {
+            "status":      "capped",
+            "completed":   {},
+            "in_progress": {"description": "unknown — agent did not produce a valid summary"},
+            "skipped":     [],
+            "narrative":   "Agent reached iteration limit and could not produce a summary.",
+        }
+        capped_summary = {
+            "completed_count": 0,
+            "skipped_count":   0,
+            "in_progress":     _CAP_FALLBACK_SUMMARY["in_progress"],
+            "narrative":       _CAP_FALLBACK_SUMMARY["narrative"],
+        }
+        return json.dumps(fallback), capped_summary
 
 
 def _load_agent(agent_id: str) -> dict:

@@ -66,6 +66,11 @@ class SentryConfig(BaseModel):
     project: str = ""
 
 
+class RetryConfig(BaseModel):
+    max_attempts_per_agent: int = 3        # hard cap per sub-agent across the session
+    max_total_retries_per_session: int = 5 # cap on total retries (attempts > 1) session-wide
+
+
 class ReportingConfig(BaseModel):
     formats: list[str] = Field(default_factory=lambda: ["json", "markdown"])
 
@@ -77,6 +82,7 @@ class Config(BaseModel):
     browser: BrowserConfig = Field(default_factory=BrowserConfig)
     models: ModelsConfig = Field(default_factory=ModelsConfig)
     budget: BudgetConfig = Field(default_factory=BudgetConfig)
+    retry: RetryConfig = Field(default_factory=RetryConfig)
     grafana: GrafanaConfig = Field(default_factory=GrafanaConfig)
     sentry: SentryConfig = Field(default_factory=SentryConfig)
     reporting: ReportingConfig = Field(default_factory=ReportingConfig)

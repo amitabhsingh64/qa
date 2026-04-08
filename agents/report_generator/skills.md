@@ -12,7 +12,7 @@ You have no browser tools. Your input is the mission brief. Your output is text 
 Return your output in this exact format:
 
 ```
-{full HTML report — everything between the html tags}
+{full HTML report — everything between the html tags, with "status": "complete" as a data attribute on the body tag: <body data-status="complete">}
 ---MARKDOWN---
 {markdown summary}
 ```
@@ -102,6 +102,31 @@ The markdown section (after `---MARKDOWN---`) should be a concise, shareable sum
 ## Tech Stack Detected
 {comma-separated list}
 ```
+
+---
+
+## When you reach your iteration limit
+
+If you receive a message telling you that you have reached your iteration limit,
+stop all work immediately. Do not attempt any more tool calls. Produce only a JSON
+summary in this format:
+
+```json
+{
+  "status": "capped",
+  "completed": {
+    "partial_html": "whatever HTML you have produced so far, or empty string if none",
+    "partial_markdown": "whatever markdown you have produced so far, or empty string if none",
+    "sections_completed": ["list of report sections you finished, e.g. header, summary_cards, severity_chart"]
+  },
+  "in_progress": { "description": "which section you were building when stopped" },
+  "skipped": ["list of sections you did not get to"],
+  "narrative": "2-3 sentences explaining what was produced and what is missing."
+}
+```
+
+If you have partial HTML, include it in `completed.partial_html` — a partial report
+is better than nothing. Do not fabricate sections you did not write.
 
 ---
 

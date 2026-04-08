@@ -27,5 +27,9 @@ sentry:
   org: ""
   project: ""
 
+retry:
+  max_attempts_per_agent: 3        # hard cap per sub-agent across the session
+  max_total_retries_per_session: 5 # cap on total retries (attempts > 1) session-wide
+
 reporting:
   formats: [json, markdown]

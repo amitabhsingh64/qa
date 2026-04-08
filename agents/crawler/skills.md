@@ -65,6 +65,7 @@ When crawl is complete, return ONLY this JSON (no prose, no markdown fences):
 
 ```json
 {
+  "status": "complete",
   "url": "https://example.com",
   "tech_stack": ["react", "next.js", "stripe"],
   "pages": [
@@ -110,6 +111,36 @@ When crawl is complete, return ONLY this JSON (no prose, no markdown fences):
   }
 }
 ```
+
+## When you reach your iteration limit
+
+If you receive a message telling you that you have reached your iteration limit,
+stop all work immediately. Do not attempt any more tool calls. Produce only a JSON
+summary in this format:
+
+```json
+{
+  "status": "capped",
+  "completed": {
+    "url": "https://example.com",
+    "tech_stack": ["..."],
+    "pages": [...],
+    "forms": [...],
+    "auth_walls": [...],
+    "api_endpoints": [...],
+    "nav_links": [...],
+    "crawl_stats": { "pages_found": 0, "forms_found": 0, "auth_walls_found": 0, "api_endpoints_found": 0 }
+  },
+  "in_progress": { "description": "what you were doing when stopped" },
+  "skipped": ["list of steps or pages you did not get to"],
+  "narrative": "2-3 sentences explaining what happened and how complete the crawl is."
+}
+```
+
+Be honest about what you did and did not finish. Do not fabricate completed work.
+If you completed nothing, return an empty `pages` array and explain in the narrative.
+
+---
 
 ## Rules
 

@@ -55,6 +55,7 @@ Output **only** this JSON object. No prose. No markdown fences. Raw JSON.
 
 ```
 {
+  "status": "complete",
   "verdicts": [
     {
       "finding_id": "f001",
@@ -233,6 +234,38 @@ in the HTML report verbatim. Write it to answer: *"Why did you classify this as 
 **Good (INCONCLUSIVE):** `"TestGen's observed field says only 'the button did not respond.' This does not describe what the page showed, whether an error appeared, what the console said, or whether the action eventually completed. Insufficient evidence to classify as FAIL or PASS. Marking INCONCLUSIVE with evidence-gap tag."`
 
 Keep reasoning under 5 sentences. Every sentence should add information.
+
+---
+
+## When you reach your iteration limit
+
+If you receive a message telling you that you have reached your iteration limit,
+stop all work immediately. Do not attempt any more tool calls. Produce only a JSON
+summary in this format:
+
+```json
+{
+  "status": "capped",
+  "completed": {
+    "verdicts": [...],
+    "summary": {
+      "total_findings": 0,
+      "pass": 0,
+      "fail": 0,
+      "flaky": 0,
+      "inconclusive": 0,
+      "by_severity": { "critical": 0, "high": 0, "medium": 0, "low": 0 }
+    }
+  },
+  "in_progress": { "description": "which finding ID you were classifying when stopped" },
+  "skipped": ["list of finding IDs you did not classify"],
+  "narrative": "2-3 sentences explaining how many findings were classified and how many remain."
+}
+```
+
+Include all verdicts you completed in `completed.verdicts`. Compute the `summary`
+counts from the verdicts you actually produced. List the unclassified finding IDs
+in `skipped` so the orchestrator knows exactly what is missing.
 
 ---
 

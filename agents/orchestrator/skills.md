@@ -182,10 +182,40 @@ Return the report in this exact format — HTML first, then the marker, then mar
 
 ---
 
+## Sub-Agent Result Status
+
+Every sub-agent result includes a `status` field. You must check this before
+passing a result forward to the next agent.
+
+### `"status": "complete"`
+The sub-agent finished all its work. Use the full result as-is.
+
+### `"status": "capped"`
+The sub-agent hit its iteration limit before finishing. The result will contain:
+- `completed` — whatever the agent actually finished (partial data)
+- `in_progress` — what it was doing when stopped
+- `skipped` — what it did not reach
+- `narrative` — a plain-English explanation
+
+**What to do when capped:**
+- Pass only the `completed` section to the next agent — not the full capped JSON
+- Include a note in the next agent's mission_brief that the input is partial:
+  `"Note: This data is partial — the previous agent was capped. Skipped: {skipped list}."`
+- Do not abort the session — continue with what you have. A partial site map is
+  better than no site map. Partial findings are better than no findings.
+- If the `completed` object is empty (agent capped immediately), skip that agent's
+  contribution and proceed to the next phase with what you have.
+
+### `"error"`
+The sub-agent returned no usable output (exception or empty response). Note it,
+continue to the next phase with whatever data you already have.
+
+---
+
 ## Rules
 
 1. Always run Phase 1 before Phase 2 — test_generator needs the site_map
 2. Pass the complete output of each sub-agent into the next sub-agent's mission_brief
 3. Do not summarise or truncate sub-agent outputs when passing them forward
 4. After report_generator returns, output `QA_SESSION_COMPLETE` and stop
-5. If a sub-agent returns an error or empty result, note it and continue with what you have
+5. Always check the `status` field of each sub-agent result before proceeding

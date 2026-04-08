@@ -117,11 +117,23 @@ async def main(
     # ------------------------------------------------------------------
     # Initialise Bedrock client
     # ------------------------------------------------------------------
+    from botocore.config import Config as BotocoreConfig
+    from src.config import Config
     from src.runner import run_qa_loop
     from src.token_usage import TokenUsage
 
+    session_config = Config.load()
+
     try:
-        bedrock_client = _boto3.client("bedrock-runtime", region_name=region)
+        bedrock_client = _boto3.client(
+            "bedrock-runtime",
+            region_name=region,
+            config=BotocoreConfig(
+                read_timeout=300,   # 5 min — long enough for large model responses
+                connect_timeout=10,
+                retries={"max_attempts": 2, "mode": "standard"},
+            ),
+        )
     except NoCredentialsError:
         print(
             "\nERROR: No AWS credentials found.\n"
@@ -169,6 +181,7 @@ async def main(
                     model_name=model_name,
                     sub_model_name=sub_model_name,
                     token_usage=token_usage,
+                    retry_config=session_config.retry,
                     verbose=True,
                 )
 

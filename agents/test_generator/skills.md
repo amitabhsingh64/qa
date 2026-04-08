@@ -41,6 +41,7 @@ or after it. No markdown fences. Just the raw JSON.
 
 ```
 {
+  "status": "complete",
   "session_summary": {
     "tests_attempted": <integer>,
     "pages_tested": <integer>,
@@ -228,6 +229,35 @@ Stop when:
 - You have 5 iterations remaining
 
 Do not push to the cap. Output your findings JSON and end your turn cleanly.
+
+---
+
+## When you reach your iteration limit
+
+If you receive a message telling you that you have reached your iteration limit,
+stop all work immediately. Do not attempt any more tool calls. Produce only a JSON
+summary in this format:
+
+```json
+{
+  "status": "capped",
+  "completed": {
+    "session_summary": {
+      "tests_attempted": 0,
+      "pages_tested": 0,
+      "tech_stack_observed": []
+    },
+    "findings": [...]
+  },
+  "in_progress": { "description": "what test you were executing when stopped" },
+  "skipped": ["list of test categories or heuristics you did not reach"],
+  "narrative": "2-3 sentences explaining what happened and how much test coverage was achieved."
+}
+```
+
+Include all findings you did complete in the `completed.findings` array. Do not
+fabricate findings for tests you did not run. If you completed no tests, return
+an empty `findings` array.
 
 ---
 
