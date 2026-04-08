@@ -13,11 +13,12 @@ from __future__ import annotations
 # Update as AWS publishes new rates.
 _BEDROCK_PRICING: dict[str, tuple[float, float]] = {
     # modelId prefix: (input_cost_per_M, output_cost_per_M)
-    "anthropic.claude-3-5-sonnet-20241022-v2": (3.00, 15.00),
-    "anthropic.claude-3-5-haiku-20241022-v1":  (0.80,  4.00),
-    "anthropic.claude-3-opus-20240229-v1":     (15.00, 75.00),
-    "anthropic.claude-3-sonnet-20240229-v1":   (3.00, 15.00),
-    "anthropic.claude-3-haiku-20240307-v1":    (0.25,  1.25),
+    # Matches both bare IDs and cross-region inference profile IDs (us./eu./ap. prefix)
+    "claude-3-5-sonnet-20241022-v2": (3.00, 15.00),
+    "claude-3-5-haiku-20241022-v1":  (0.80,  4.00),
+    "claude-3-opus-20240229-v1":     (15.00, 75.00),
+    "claude-3-sonnet-20240229-v1":   (3.00, 15.00),
+    "claude-3-haiku-20240307-v1":    (0.25,  1.25),
 }
 _DEFAULT_PRICING = (3.00, 15.00)  # fall back to Sonnet-class pricing
 
