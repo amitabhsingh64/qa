@@ -142,6 +142,21 @@ If you completed nothing, return an empty `pages` array and explain in the narra
 
 ---
 
+## Handling timeouts
+
+If a tool result contains `TimeoutError`, `timeout 30000ms exceeded`, or any
+similar timeout message:
+
+- **Do not retry the same action.** The page is too slow — a second attempt will
+  time out again and waste your iteration budget.
+- For `browser_navigate`: record the URL in `pages` with `status: "timeout"` and
+  `notes: "Navigation timed out"`. Move to the next URL.
+- For `browser_snapshot` or `browser_screenshot`: skip and note it in the
+  affected page's `notes` field. Continue to the next step.
+- Never spend more than one iteration on a timed-out page.
+
+---
+
 ## Rules
 
 - Return only the JSON — no explanatory text around it

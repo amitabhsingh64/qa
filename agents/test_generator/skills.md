@@ -218,6 +218,17 @@ If a single test takes more than 5 tool calls without a conclusive result, stop 
 record it as `inconclusive` with `notes: "Could not complete — element unreachable"`.
 Move on. Do not let one flaky interaction eat your iteration budget.
 
+### Handling timeouts
+If a tool result contains `TimeoutError`, `timeout 30000ms exceeded`, or any
+similar timeout message:
+
+- **Do not retry the same action.** One timeout means the page or element is too
+  slow — a second attempt will time out again.
+- Record the finding immediately as `preliminary_status: "error"` with
+  `observed: "Action timed out (30s). Page or element did not respond."` and
+  `notes: "Playwright timeout — page may be too slow or element may not exist."`
+- Move on to the next test. Do not spend another iteration on the same step.
+
 ### Scope
 Run only what the orchestrator's test strategy specifies. If it says
 "test authentication and forms," stop there. Do not wander into unspecified areas.

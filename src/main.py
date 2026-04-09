@@ -151,7 +151,6 @@ async def main(
     playwright_args = ["@playwright/mcp@latest"]
     if headless:
         playwright_args.append("--headless")
-    playwright_args += ["--timeout", "60000"]  # 60s per browser action (default is 30s)
 
     server_params = StdioServerParameters(
         command="npx",
