@@ -1,0 +1,218 @@
+- generic [ref=e1]:
+  - link "Press \"Enter\" to skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-container"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic:
+          - navigation
+      - link "Practice Test Automation" [ref=e10] [cursor=pointer]:
+        - /url: https://practicetestautomation.com/
+        - img "Practice Test Automation" [ref=e11]
+      - navigation [ref=e16]:
+        - navigation [ref=e17]:
+          - list [ref=e18]:
+            - listitem [ref=e19]:
+              - link "Home" [ref=e20] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/
+            - listitem [ref=e21]:
+              - link "Practice" [ref=e22] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/practice/
+            - listitem [ref=e23]:
+              - link "Courses" [ref=e24] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/courses/
+            - listitem [ref=e25]:
+              - link "Blog" [ref=e26] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/blog/
+            - listitem [ref=e27]:
+              - link "Contact" [ref=e28] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/contact/
+    - main [ref=e29]:
+      - article [ref=e31]:
+        - heading "Test Table" [level=1] [ref=e33]
+        - generic [ref=e34]:
+          - paragraph [ref=e35]:
+            - text: This page is created to practice building XPath locators for real-world tables. Use the table below to locate specific cells, rows, and links based on attributes like
+            - code [ref=e36]: data-col
+            - text: ","
+            - code [ref=e37]: headers
+            - text: ", or text content. Try writing locators for courses by language, level, or enrollment numbers, and verify that clicking a course link opens the correct page. If you want to learn how to master XPath and apply it in Selenium tests, check out my"
+            - link "XPath Locators for Selenium" [ref=e38] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/xpath-course-coupon
+            - text: program.
+          - generic [ref=e39]:
+            - heading "Automation Courses" [level=2] [ref=e40]
+            - generic [ref=e41]:
+              - heading "Filters" [level=3] [ref=e42]
+              - button "Reset filters" [ref=e218] [cursor=pointer]: Reset
+            - generic [ref=e43]:
+              - group "Language" [ref=e44]:
+                - generic [ref=e45]: Language
+                - generic [ref=e46]:
+                  - radio "Any" [ref=e47]
+                  - text: Any
+                - generic [ref=e48]:
+                  - radio "Java" [checked] [active] [ref=e49]
+                  - text: Java
+                - generic [ref=e50]:
+                  - radio "Python" [ref=e51]
+                  - text: Python
+              - group "Level" [ref=e52]:
+                - generic [ref=e53]: Level
+                - generic [ref=e54]:
+                  - checkbox "Beginner" [checked] [ref=e55]
+                  - text: Beginner
+                - generic [ref=e56]:
+                  - checkbox "Intermediate" [checked] [ref=e57]
+                  - text: Intermediate
+                - generic [ref=e58]:
+                  - checkbox "Advanced" [checked] [ref=e59]
+                  - text: Advanced
+              - group "Min enrollments" [ref=e60]:
+                - generic [ref=e61]: Min enrollments
+                - listbox "Minimum enrollments" [ref=e62]:
+                  - button "Any" [ref=e63] [cursor=pointer]
+              - generic [ref=e65]:
+                - generic [ref=e66]: "Sort by:"
+                - combobox "Sort by:" [ref=e67] [cursor=pointer]:
+                  - option "ID" [selected]
+                  - option "Course Name"
+                  - option "Language"
+                  - option "Level"
+                  - option "Enrollments"
+            - table [ref=e68]:
+              - rowgroup [ref=e69]:
+                - row "ID Course Name Language Level Enrollments Link" [ref=e70]:
+                  - columnheader "ID" [ref=e71]
+                  - columnheader "Course Name" [ref=e72]
+                  - columnheader "Language" [ref=e73]
+                  - columnheader "Level" [ref=e74]
+                  - columnheader "Enrollments" [ref=e75]
+                  - columnheader "Link" [ref=e76]
+              - rowgroup [ref=e77]:
+                - row "1517620 Selenium Framework Java Advanced 2667 View" [ref=e78]:
+                  - cell "1517620" [ref=e79]
+                  - cell "Selenium Framework" [ref=e80]
+                  - cell "Java" [ref=e81]
+                  - cell "Advanced" [ref=e82]
+                  - cell "2667" [ref=e83]
+                  - cell "View" [ref=e84]:
+                    - link "View" [ref=e85] [cursor=pointer]:
+                      - /url: https://practicetestautomation.com/selenium-webdriver-test-framework-from-scratch-referralCode
+                - row "1693880 Selenium with Java Java Beginner 64284 View" [ref=e86]:
+                  - cell "1693880" [ref=e87]
+                  - cell "Selenium with Java" [ref=e88]
+                  - cell "Java" [ref=e89]
+                  - cell "Beginner" [ref=e90]
+                  - cell "64284" [ref=e91]
+                  - cell "View" [ref=e92]:
+                    - link "View" [ref=e93] [cursor=pointer]:
+                      - /url: https://practicetestautomation.com/beginners-course-coupon
+                - row "1904956 Advanced Selenium Java Intermediate 16452 View" [ref=e102]:
+                  - cell "1904956" [ref=e103]
+                  - cell "Advanced Selenium" [ref=e104]
+                  - cell "Java" [ref=e105]
+                  - cell "Intermediate" [ref=e106]
+                  - cell "16452" [ref=e107]
+                  - cell "View" [ref=e108]:
+                    - link "View" [ref=e109] [cursor=pointer]:
+                      - /url: https://practicetestautomation.com/advanced-course-coupon
+                - row "2854476 REST Assured Java Intermediate 8254 View" [ref=e110]:
+                  - cell "2854476" [ref=e111]
+                  - cell "REST Assured" [ref=e112]
+                  - cell "Java" [ref=e113]
+                  - cell "Intermediate" [ref=e114]
+                  - cell "8254" [ref=e115]
+                  - cell "View" [ref=e116]:
+                    - link "View" [ref=e117] [cursor=pointer]:
+                      - /url: https://practicetestautomation.com/rest-assured-course-coupon
+                - row "3970682 Selenium Grid Java Advanced 2207 View" [ref=e118]:
+                  - cell "3970682" [ref=e119]
+                  - cell "Selenium Grid" [ref=e120]
+                  - cell "Java" [ref=e121]
+                  - cell "Advanced" [ref=e122]
+                  - cell "2207" [ref=e123]
+                  - cell "View" [ref=e124]:
+                    - link "View" [ref=e125] [cursor=pointer]:
+                      - /url: https://practicetestautomation.com/selenium-grid
+                - row "4536644 Java for Testers Java Beginner 6678 View" [ref=e126]:
+                  - cell "4536644" [ref=e127]
+                  - cell "Java for Testers" [ref=e128]
+                  - cell "Java" [ref=e129]
+                  - cell "Beginner" [ref=e130]
+                  - cell "6678" [ref=e131]
+                  - cell "View" [ref=e132]:
+                    - link "View" [ref=e133] [cursor=pointer]:
+                      - /url: https://practicetestautomation.com/java-for-testers-udemy
+          - separator [ref=e150]
+          - 'heading "Test case 1: Language filter → Java" [level=5] [ref=e151]'
+          - list [ref=e152]:
+            - listitem [ref=e153]: Open page
+            - listitem [ref=e154]: Select Language = Java
+            - listitem [ref=e155]: Verify only Java courses are visible
+          - paragraph [ref=e156]: Fails if language filter is not reapplied on change
+          - separator [ref=e157]
+          - 'heading "Test case 2: Level filter → Beginner only" [level=5] [ref=e158]'
+          - list [ref=e159]:
+            - listitem [ref=e160]: Open page
+            - listitem [ref=e161]: Uncheck Intermediate and Advanced
+            - listitem [ref=e162]: Verify that only Beginner courses are visible
+          - paragraph [ref=e163]: Fails if unchecked levels still pass the filter
+          - separator [ref=e164]
+          - 'heading "Test case 3: Min enrollments → 10,000+" [level=5] [ref=e165]'
+          - list [ref=e166]:
+            - listitem [ref=e167]: Open page
+            - listitem [ref=e168]: Open “Min enrollments” dropdown and choose 10,000+
+            - listitem [ref=e169]: Verify every visible row shows enrollments ≥ 10,000
+          - paragraph [ref=e170]: Fails if numeric comparison is done as strings
+          - separator [ref=e171]
+          - 'heading "Test case 4: Combined filters → Python + Beginner + 10,000+" [level=5] [ref=e172]'
+          - list [ref=e173]:
+            - listitem [ref=e174]: Open page
+            - listitem [ref=e175]: Select Language = Python
+            - listitem [ref=e176]: Uncheck Intermediate and Advanced
+            - listitem [ref=e177]: Set Min enrollments = 10,000+
+            - listitem [ref=e178]: Verify only Python Beginner courses with ≥ 10,000 enrollments are visible
+          - paragraph [ref=e179]: Fails if incorrect courses are visible
+          - separator [ref=e180]
+          - 'heading "Test case 5: No results state" [level=5] [ref=e181]'
+          - list [ref=e182]:
+            - listitem [ref=e183]: Open page
+            - listitem [ref=e184]: Select a combination that yields no matches (e.g., Language with Level that does not exist)
+            - listitem [ref=e185]: Verify “No matching courses.” is shown
+          - paragraph [ref=e186]: Fails if no-data state does not toggle with filters
+          - separator [ref=e187]
+          - 'heading "Test case 6: Reset button visibility and behavior" [level=5] [ref=e188]'
+          - list [ref=e189]:
+            - listitem [ref=e190]: Open page
+            - listitem [ref=e191]: Change any filter
+            - listitem [ref=e192]: Verify the Reset button becomes visible
+            - listitem [ref=e193]: Click Reset
+            - listitem [ref=e194]: Verify Language = Any, all Levels checked, Min enrollments = Any
+            - listitem [ref=e195]: Verify the Reset button is hidden and all rows are visible
+          - paragraph [ref=e196]: Fails if defaults or visibility logic are not restored
+          - separator [ref=e197]
+          - 'heading "Test case 7: Sort by Enrollments (ascending, numeric)" [level=5] [ref=e198]'
+          - list [ref=e199]:
+            - listitem [ref=e200]: Open page
+            - listitem [ref=e201]: Set Sort by = Enrollments
+            - listitem [ref=e202]: Verify visible rows are ordered from smallest to largest enrollment
+            - listitem [ref=e203]: Verify numbers with commas sort correctly
+          - paragraph [ref=e204]: Fails if the sort is lexicographic
+          - separator [ref=e205]
+          - 'heading "Test case 8: Sort by Course Name (alphabetical)" [level=5] [ref=e206]'
+          - list [ref=e207]:
+            - listitem [ref=e208]: Open page
+            - listitem [ref=e209]: Set Sort by = Course Name
+            - listitem [ref=e210]: Verify visible rows are ordered A→Z by course name
+            - listitem [ref=e211]: Verify order updates after changing filters
+          - paragraph [ref=e212]: Fails if string compare ignores case/whitespace inconsistently
+          - paragraph
+    - contentinfo:
+      - generic [ref=e214]:
+        - text: © Copyright 2020
+        - link "Practice Test Automation." [ref=e215] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/
+        - text: All rights reserved |
+        - link "Privacy Policy" [ref=e216] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/privacy-policy/

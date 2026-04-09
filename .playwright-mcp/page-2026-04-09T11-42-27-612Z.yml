@@ -1,0 +1,89 @@
+- generic [active] [ref=e1]:
+  - link "Press \"Enter\" to skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-container"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic:
+          - navigation
+      - link "Practice Test Automation" [ref=e10] [cursor=pointer]:
+        - /url: https://practicetestautomation.com/
+        - img "Practice Test Automation" [ref=e11]
+      - navigation [ref=e16]:
+        - navigation [ref=e17]:
+          - list [ref=e18]:
+            - listitem [ref=e19]:
+              - link "Home" [ref=e20] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/
+            - listitem [ref=e21]:
+              - link "Practice" [ref=e22] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/practice/
+            - listitem [ref=e23]:
+              - link "Courses" [ref=e24] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/courses/
+            - listitem [ref=e25]:
+              - link "Blog" [ref=e26] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/blog/
+            - listitem [ref=e27]:
+              - link "Contact" [ref=e28] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/contact/
+    - main [ref=e29]:
+      - generic [ref=e31]:
+        - article [ref=e32]:
+          - heading "Privacy Policy" [level=1] [ref=e34]
+          - generic [ref=e35]:
+            - paragraph [ref=e36]: "Effective date: November 01, 2019"
+            - paragraph [ref=e37]:
+              - text: Practice Test Automation (“us”, “we”, or “our”) operates
+              - link "https://practicetestautomation.com/" [ref=e38] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/
+              - text: (the “Site”). This page informs you of our policies regarding the collection, use, and disclosure of Personal Information we receive from users of the Site.
+            - paragraph [ref=e39]: We use your Personal Information only for providing and improving the Site. By using the Site, you agree to the collection and use of information in accordance with this policy.
+            - paragraph [ref=e40]:
+              - strong [ref=e41]: Information Collection And Use
+            - paragraph [ref=e42]: While using our Site, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you. Personally identifiable information may include but is not limited to your name and email address (“Personal Information”).
+            - paragraph [ref=e43]:
+              - strong [ref=e44]: Log Data
+            - paragraph [ref=e45]: Like many site operators, we collect information that your browser sends whenever you visit our Site (“Log Data”).
+            - paragraph [ref=e46]: This Log Data may include information such as your computer’s Internet Protocol (“IP”) address, browser type, browser version, the pages of our Site that you visit, the time and date of your visit, the time spent on those pages and other statistics.
+            - paragraph [ref=e47]: In addition, we may use third party services such as Google Analytics that collect, monitor and analyze this data.
+            - paragraph [ref=e48]:
+              - strong [ref=e49]: Communications
+            - paragraph [ref=e50]: We may use your Personal Information to contact you with newsletters, marketing or promotional materials and other information that may benefit you.
+            - paragraph [ref=e51]:
+              - strong [ref=e52]: Cookies
+            - paragraph [ref=e53]: Cookies are files with small amount of data, which may include an anonymous unique identifier. Cookies are sent to your browser from a web site and stored on your computer’s hard drive.
+            - paragraph [ref=e54]: Like many sites, we use “cookies” to collect information. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our Site.
+            - paragraph [ref=e55]:
+              - strong [ref=e56]: Security
+            - paragraph [ref=e57]: The security of your Personal Information is important to us, but remember that no method of transmission over the Internet, or method of electronic storage, is 100% secure. While we strive to use commercially acceptable means to protect your Personal Information, we cannot guarantee its absolute security.
+            - paragraph [ref=e58]:
+              - strong [ref=e59]: Links to Other Sites
+            - paragraph [ref=e60]: Our Service may contain links to other sites that are not operated by us. If you click a third party link, you will be directed to that third party’s site. We strongly advise you to review the Privacy Policy of every site you visit.
+            - paragraph [ref=e61]: We have no control over and assume no responsibility for the content, privacy policies or practices of any third party sites or services.
+            - paragraph [ref=e62]:
+              - strong [ref=e63]: Children’s Privacy
+            - paragraph [ref=e64]: Our Service does not address anyone under the age of 18 (“Children”).
+            - paragraph [ref=e65]: We do not knowingly collect personally identifiable information from anyone under the age of 18. If you are a parent or guardian and you are aware that your Child has provided us with Personal Data, please contact us. If we become aware that we have collected Personal Data from children without verification of parental consent, we take steps to remove that information from our servers.
+            - paragraph [ref=e66]:
+              - strong [ref=e67]: Changes To This Privacy Policy
+            - paragraph [ref=e68]: This Privacy Policy is effective as of November 01, 2019 and will remain in effect except with respect to any changes in its provisions in the future, which will be in effect immediately after being posted on this page.
+            - paragraph [ref=e69]: We reserve the right to update or change our Privacy Policy at any time and you should check this Privacy Policy periodically. Your continued use of the Service after we post any modifications to the Privacy Policy on this page will constitute your acknowledgment of the modifications and your consent to abide and be bound by the modified Privacy Policy.
+            - paragraph [ref=e70]: If we make any material changes to this Privacy Policy, we will notify you either through the email address you have provided us, or by placing a prominent notice on our website.
+            - paragraph [ref=e71]:
+              - strong [ref=e72]: Contact Us
+            - paragraph [ref=e73]:
+              - text: "If you have any questions about this Privacy Policy, please contact us by visiting this page on our website:"
+              - strong [ref=e74]:
+                - emphasis [ref=e75]:
+                  - link "https://practicetestautomation.com/contact/" [ref=e76] [cursor=pointer]:
+                    - /url: https://practicetestautomation.com/contact/
+        - paragraph [ref=e78]: Comments are closed.
+    - contentinfo:
+      - generic [ref=e80]:
+        - text: © Copyright 2020
+        - link "Practice Test Automation." [ref=e81] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/
+        - text: All rights reserved |
+        - link "Privacy Policy" [ref=e82] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/privacy-policy/

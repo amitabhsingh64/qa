@@ -1,0 +1,107 @@
+- generic [active] [ref=e1]:
+  - link "Press \"Enter\" to skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-container"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic:
+          - navigation
+      - link "Practice Test Automation" [ref=e10] [cursor=pointer]:
+        - /url: https://practicetestautomation.com/
+        - img "Practice Test Automation" [ref=e11]
+      - navigation [ref=e16]:
+        - navigation [ref=e17]:
+          - list [ref=e18]:
+            - listitem [ref=e19]:
+              - link "Home" [ref=e20] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/
+            - listitem [ref=e21]:
+              - link "Practice" [ref=e22] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/practice/
+            - listitem [ref=e23]:
+              - link "Courses" [ref=e24] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/courses/
+            - listitem [ref=e25]:
+              - link "Blog" [ref=e26] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/blog/
+            - listitem [ref=e27]:
+              - link "Contact" [ref=e28] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/contact/
+    - main [ref=e29]:
+      - article [ref=e32]:
+        - heading "Hello" [level=1] [ref=e34]
+        - generic [ref=e35]:
+          - figure [ref=e37]:
+            - img "Dmitry Shyshkin, your Selenium WebDriver instructor" [ref=e38]
+          - paragraph [ref=e39]:
+            - strong [ref=e40]: Welcome to Practice Test Automation!
+          - paragraph [ref=e41]: I’m Dmitry Shyshkin, your guide on the path to a thriving QA career. Effortlessly master Selenium WebDriver and test automation to enhance your skills and increase your earnings.
+          - paragraph [ref=e42]:
+            - strong [ref=e43]: Experience and Expertise
+          - paragraph [ref=e44]: As a Principal Software Development Engineer in Test, I bring over a decade of experience in automating Web UI, API, and Mobile tests using tools like Selenium WebDriver, Appium, Postman, RestAssured, and more. I began my journey as a manual QA engineer and quickly developed a passion for test automation. Having served as the lead test automation expert in various projects, I’m confident in my ability to help you excel in test automation.
+          - paragraph [ref=e45]:
+            - strong [ref=e46]: Beyond Test Automation
+          - paragraph [ref=e47]: Not only have I automated tests, but I’ve also applied automation to job searches and even finding cheaper flights! Now, I’m eager to share this passion and knowledge with you.
+          - paragraph [ref=e48]:
+            - strong [ref=e49]: Courses and Achievements
+          - paragraph [ref=e50]:
+            - text: In 2017, I started sharing my test automation expertise through video courses, beginning with a Selenium WebDriver tutorial on YouTube. Today, I offer
+            - strong [ref=e51]:
+              - link "nine courses with over 70,000 students" [ref=e52] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/courses/
+            - text: ", including a"
+            - strong [ref=e53]:
+              - link "BestSeller XPath course" [ref=e54] [cursor=pointer]:
+                - /url: https://www.udemy.com/course/xpath-locators-for-selenium/?referralCode=ACB28329B5AC2333DDCC
+            - text: and a
+            - strong [ref=e55]:
+              - link "HighestRated Selenium course" [ref=e56] [cursor=pointer]:
+                - /url: https://www.udemy.com/course/selenium-for-beginners/?referralCode=A21BE51035C15406EFA4
+            - text: . With a 4.7 out of 5 instructor rating, I’m grateful to every student who has joined me on this journey.
+          - paragraph [ref=e57]:
+            - strong [ref=e58]: A Resourceful Website
+          - paragraph [ref=e59]:
+            - text: This website was carefully crafted to host a
+            - strong [ref=e60]:
+              - link "diverse selection of articles, standalone lectures, tips, and examples" [ref=e61] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/blog/
+            - text: for those interested in test automation. Moreover, with a
+            - strong [ref=e62]:
+              - link "practical platform" [ref=e63] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/practice/
+            - text: already established, test automation beginners can easily put their skills into practice.
+          - paragraph [ref=e64]:
+            - strong [ref=e65]: Looking Ahead
+          - paragraph [ref=e66]: As we look ahead, I’m thrilled about the future of Practice Test Automation and delighted to have you on board!
+          - paragraph [ref=e67]:
+            - strong [ref=e68]: Explore and Learn
+          - paragraph [ref=e69]:
+            - text: Please be sure to visit our
+            - strong [ref=e70]:
+              - link "BLOG" [ref=e71] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/blog/
+            - text: for engaging articles, speeches, and tutorials, and don’t miss our
+            - link "COURSES" [ref=e72] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/courses/
+              - strong [ref=e73]: COURSES
+            - text: ", designed to enrich your learning experience."
+          - generic [ref=e75]:
+            - heading "Get a FREE XPath cheat sheet by Signing Up for our newsletter" [level=6] [ref=e79]
+            - generic [ref=e81]:
+              - textbox "Name *" [ref=e84]
+              - textbox "Email Address *" [ref=e87]
+            - button "Get XPath cheat sheet" [ref=e89]
+            - paragraph [ref=e90]:
+              - emphasis [ref=e91]:
+                - generic [ref=e92]:
+                  - text: We don’t spam! Read more in our
+                  - link "privacy policy" [ref=e93] [cursor=pointer]:
+                    - /url: https://practicetestautomation.com/privacy-policy/
+    - contentinfo:
+      - generic [ref=e95]:
+        - text: © Copyright 2020
+        - link "Practice Test Automation." [ref=e96] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/
+        - text: All rights reserved |
+        - link "Privacy Policy" [ref=e97] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/privacy-policy/

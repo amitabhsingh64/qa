@@ -1,0 +1,234 @@
+- generic [active] [ref=e1]:
+  - link "Press \"Enter\" to skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-container"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic:
+          - navigation
+      - link "Practice Test Automation" [ref=e10] [cursor=pointer]:
+        - /url: https://practicetestautomation.com/
+        - img "Practice Test Automation" [ref=e11]
+      - navigation [ref=e16]:
+        - navigation [ref=e17]:
+          - list [ref=e18]:
+            - listitem [ref=e19]:
+              - link "Home" [ref=e20] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/
+            - listitem [ref=e21]:
+              - link "Practice" [ref=e22] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/practice/
+            - listitem [ref=e23]:
+              - link "Courses" [ref=e24] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/courses/
+            - listitem [ref=e25]:
+              - link "Blog" [ref=e26] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/blog/
+            - listitem [ref=e27]:
+              - link "Contact" [ref=e28] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/contact/
+    - main [ref=e29]:
+      - article [ref=e32]:
+        - heading "Courses" [level=1] [ref=e34]
+        - generic [ref=e35]:
+          - 'heading "Selenium WebDriver: Selenium Automation Testing with Java" [level=2] [ref=e36]':
+            - 'link "Selenium WebDriver: Selenium Automation Testing with Java" [ref=e37] [cursor=pointer]':
+              - /url: https://practicetestautomation.com/beginners-course-coupon
+          - paragraph [ref=e38]: Learn Selenium WebDriver with Java and TestNG from scratch. Perfect for manual testers and complete beginners ready to start automating real-world tests.
+          - paragraph [ref=e39]:
+            - strong [ref=e40]: My top-rated, best-selling course
+            - text: –
+            - strong [ref=e41]: fully updated in 2024
+            - text: for faster learning and career growth
+          - figure [ref=e42]
+          - paragraph [ref=e43]:
+            - strong [ref=e44]: "What you’ll learn in this course:"
+          - list [ref=e45]:
+            - listitem [ref=e46]: Build a complete test automation framework with Selenium WebDriver
+            - listitem [ref=e47]: Write and run your first real browser automation tests
+            - listitem [ref=e48]: Use TestNG for powerful test structure and reporting
+            - listitem [ref=e49]: Run cross-browser tests in Chrome, Firefox, and Edge
+            - listitem [ref=e50]: Debug and fix common Selenium test failures with confidence
+            - listitem [ref=e51]: Learn Java programming essentials tailored for test automation
+            - listitem [ref=e52]: Prepare for interviews and build your job-ready portfolio
+          - paragraph
+          - link "Enroll in this course on Udemy" [ref=e55] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/beginners-course-coupon
+          - separator [ref=e56]
+          - 'heading "Selenium WebDriver: Selenium Automation Testing with Python" [level=2] [ref=e57]':
+            - 'link "Selenium WebDriver: Selenium Automation Testing with Python" [ref=e58] [cursor=pointer]':
+              - /url: https://practicetestautomation.com/selenium-python-udemy
+          - paragraph [ref=e59]: Learn Selenium WebDriver with Python and PyTest from scratch. This hands-on course is perfect for manual testers and anyone new to automation.
+          - paragraph [ref=e60]: Top-rated, easy-to-follow course updated in 2024 – start automating real browser tests fast
+          - figure [ref=e61]
+          - paragraph [ref=e62]:
+            - strong [ref=e63]: "What you’ll learn in this course:"
+          - list [ref=e64]:
+            - listitem [ref=e65]: Set up test automation framework with Selenium WebDriver
+            - listitem [ref=e66]: Automate your first Selenium WebDriver test
+            - listitem [ref=e67]: Automate software tests using Python and PyTest
+            - listitem [ref=e68]: Execute tests in Chrome, Firefox, and other browsers
+            - listitem [ref=e69]: Recognize test failures and exceptions, and fix them
+            - listitem [ref=e70]: Use PyTest for better test structure and maintenance
+          - link "Enroll in this course on Udemy" [ref=e73] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/selenium-python-udemy
+          - separator [ref=e74]
+          - heading "Java for Testers" [level=2] [ref=e75]:
+            - link "Java for Testers" [ref=e76] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/java-for-testers-udemy
+          - paragraph [ref=e77]: Start your test automation career by learning Java from this specifically designed for beginners course.
+          - paragraph [ref=e78]: All Java you need to start learning test automation
+          - figure [ref=e79]
+          - paragraph [ref=e80]:
+            - strong [ref=e81]: "In this course you will learn:"
+          - list [ref=e82]:
+            - listitem [ref=e83]: Starting from the scratch, installing Java and IDEs
+            - listitem [ref=e84]: Creating a first project
+            - listitem [ref=e85]: Learning basic things, data types
+            - listitem [ref=e86]: Learning methods, classes, different functions
+            - listitem [ref=e87]: Principles of Object Oriented Programimg
+            - listitem [ref=e88]: Advanced Java functions
+            - listitem [ref=e89]: Working with files
+            - listitem [ref=e90]: Test frameworks
+          - link "Enroll in this course on Udemy" [ref=e93] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/java-for-testers-udemy
+          - separator [ref=e94]
+          - 'heading "Python: The Complete Guide for Software Testers" [level=2] [ref=e95]':
+            - 'link "Python: The Complete Guide for Software Testers" [ref=e96] [cursor=pointer]':
+              - /url: https://practicetestautomation.com/python-for-testers
+          - paragraph [ref=e97]: "Master Python for Testing: Automate Tests, Handle Exceptions, Explore OOP, and Dive into Python Libraries."
+          - paragraph [ref=e98]: Dive Deep Into Python for Professional Software Testing
+          - figure [ref=e99]
+          - paragraph [ref=e100]:
+            - strong [ref=e101]: "In this course you will learn:"
+          - list [ref=e102]:
+            - listitem [ref=e103]: Master the basics and advanced concepts of Python programming.
+            - listitem [ref=e104]: Gain a deep understanding of Python’s data types, structures, and control structures.
+            - listitem [ref=e105]: Learn Object-Oriented Programming (OOP) in Python and apply OOP concepts like inheritance, encapsulation, and polymorphism.
+            - listitem [ref=e106]: Acquire skills for software testing in Python, including unit testing with PyTest, and handling exceptions & errors.
+          - link "Enroll in this course on Udemy" [ref=e109] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/python-for-testers
+          - separator [ref=e110]
+          - heading "Advanced Selenium WebDriver with Java and TestNG" [level=2] [ref=e111]:
+            - link "Advanced Selenium WebDriver with Java and TestNG" [ref=e112] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/advanced-course-coupon
+          - paragraph [ref=e113]: A real-world example of Advanced Selenium WebDriver test automation framework with Java and TestNG
+          - paragraph [ref=e114]:
+            - text: This course will make you a
+            - strong [ref=e115]:
+              - emphasis [ref=e116]: Selenium Pro
+          - figure [ref=e117]
+          - paragraph [ref=e118]:
+            - strong [ref=e119]: "In this course you will learn:"
+          - list [ref=e120]:
+            - listitem [ref=e121]: Develop Full-Stack Test Automation Framework from scratch
+            - listitem [ref=e122]: Implement Data-Driven Test Framework
+            - listitem [ref=e123]: Use Page Object Model
+            - listitem [ref=e124]: Automate almost any test case
+            - listitem [ref=e125]: Use advanced Selenium WebDriver techniques (Taking screenshots, capturing JS console errors, etc)
+          - paragraph
+          - link "Enroll in this course on Udemy" [ref=e128] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/advanced-course-coupon
+          - separator [ref=e129]
+          - heading "XPath locators for Selenium" [level=2] [ref=e130]:
+            - link "XPath locators for Selenium" [ref=e131] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/xpath-course-coupon
+          - paragraph [ref=e132]: Build complex XPath locators for Selenium automation that will work on any web element
+          - paragraph [ref=e133]:
+            - emphasis [ref=e134]:
+              - strong [ref=e135]: Bestseller
+              - text: course in the
+            - text: Selenium Testing Framework
+            - emphasis [ref=e136]: category
+          - figure [ref=e137]
+          - paragraph [ref=e138]: The XPath is the most complicated method of identifying elements. It can find the location of any element on a web page, even those without class, name, or id attributes. XPath produces reliable locators if used correctly.
+          - paragraph [ref=e139]:
+            - strong [ref=e140]: "In this course you will learn:"
+          - list [ref=e141]:
+            - listitem [ref=e142]: Build complex XPath locators
+            - listitem [ref=e143]: Locate ANY element on the page with XPath
+            - listitem [ref=e144]: Automate testing of any element on the web page
+          - link "Enroll in this course on Udemy" [ref=e147] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/xpath-course-coupon
+          - separator [ref=e148]
+          - heading "REST Assured. API test automation for beginners" [level=2] [ref=e149]:
+            - link "REST Assured. API test automation for beginners" [ref=e150] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/rest-assured-course-coupon
+          - paragraph [ref=e151]: Rest API test automation from scratch. Create a cool REST Assured framework with Java and TestNG
+          - paragraph [ref=e152]:
+            - strong [ref=e153]:
+              - emphasis [ref=e154]: H
+              - text: i
+              - emphasis [ref=e155]: ghest Rated
+            - emphasis [ref=e156]: course in the
+            - text: REST Assured
+            - emphasis [ref=e157]: category
+          - figure [ref=e158]
+          - paragraph [ref=e159]:
+            - strong [ref=e160]: "In this course you will learn:"
+          - list [ref=e161]:
+            - listitem [ref=e162]: How to start REST API Automation using REST Assured
+            - listitem [ref=e163]: Creating REST API testing framework from scratch with Maven and TestNG
+            - listitem [ref=e164]: Use JsonPath and XmlPath
+            - listitem [ref=e165]: Serialize and De-Serialize POJOs
+            - listitem [ref=e166]: Work with Headers and Cookies
+            - listitem [ref=e167]: Use Basic Authentication
+          - paragraph
+          - link "Enroll in this course on Udemy" [ref=e170] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/rest-assured-course-coupon
+          - separator [ref=e171]
+          - heading "Advanced Selenium Grid and Cloud" [level=2] [ref=e172]:
+            - link "Advanced Selenium Grid and Cloud" [ref=e173] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/selenium-grid
+          - paragraph [ref=e174]: Advanced Selenium WebDriver test automation framework with Selenium Grid, Cloud and continuous test execution in Jenkins
+          - paragraph [ref=e175]:
+            - emphasis [ref=e176]:
+              - text: Become
+              - strong [ref=e177]: SDET
+              - text: or even
+              - strong [ref=e178]: Test Automation Architect
+              - text: by learning Selenium Grid!
+          - figure [ref=e179]
+          - paragraph [ref=e180]:
+            - strong [ref=e181]: "In this course you will learn:"
+          - list [ref=e182]:
+            - listitem [ref=e183]: Setting up Selenium Grid
+            - listitem [ref=e184]: Running tests on Selenium Grid
+            - listitem [ref=e185]: Advantages and disadvantages of Selenium Grid
+            - listitem [ref=e186]: Test Automation cloud providers
+            - listitem [ref=e187]: Running tests in the cloud
+            - listitem [ref=e188]: Running tests on SauceLabs
+            - listitem [ref=e189]: Jenkins and continuous test execution
+          - paragraph
+          - link "Enroll in this course on Udemy" [ref=e192] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/selenium-grid
+          - separator [ref=e193]
+          - heading "Advanced Selenium testing framework with Java" [level=2] [ref=e194]:
+            - link "Advanced Selenium testing framework with Java" [ref=e195] [cursor=pointer]:
+              - /url: https://practicetestautomation.com/selenium-webdriver-test-framework-from-scratch-referralCode
+          - paragraph [ref=e196]: Selenium WebDriver with Java, TestNG, and Maven. Learn Selenium Testing Framework with Java and TestNG
+          - paragraph [ref=e197]:
+            - emphasis [ref=e198]: Quick-paced course
+            - text: for test automation engineers that want to improve their framework-building skills
+          - generic [ref=e199]:
+            - generic [ref=e200]:
+              - paragraph [ref=e201]:
+                - strong [ref=e202]: "In this course you will learn:"
+              - list [ref=e203]:
+                - listitem [ref=e204]: Build test framework in Selenium WebDriver from scratch using Java and TestNG
+                - listitem [ref=e205]: Create reliable, stable, and easily maintainable automated tests
+                - listitem [ref=e206]: Use the Page Object Model for the better test structure
+                - listitem [ref=e207]: Master Selenium Webdriver
+                - listitem [ref=e208]: Create Data-Driven Test Framework
+            - figure [ref=e210]
+          - link "Enroll in this course on Udemy" [ref=e213] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/selenium-webdriver-test-framework-from-scratch-referralCode
+          - paragraph
+    - contentinfo:
+      - generic [ref=e215]:
+        - text: © Copyright 2020
+        - link "Practice Test Automation." [ref=e216] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/
+        - text: All rights reserved |
+        - link "Privacy Policy" [ref=e217] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/privacy-policy/

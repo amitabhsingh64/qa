@@ -1,0 +1,97 @@
+- generic [active] [ref=e1]:
+  - link "Press \"Enter\" to skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-container"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic:
+          - navigation
+      - link "Practice Test Automation" [ref=e10] [cursor=pointer]:
+        - /url: https://practicetestautomation.com/
+        - img "Practice Test Automation" [ref=e11]
+      - navigation [ref=e16]:
+        - navigation [ref=e17]:
+          - list [ref=e18]:
+            - listitem [ref=e19]:
+              - link "Home" [ref=e20] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/
+            - listitem [ref=e21]:
+              - link "Practice" [ref=e22] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/practice/
+            - listitem [ref=e23]:
+              - link "Courses" [ref=e24] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/courses/
+            - listitem [ref=e25]:
+              - link "Blog" [ref=e26] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/blog/
+            - listitem [ref=e27]:
+              - link "Contact" [ref=e28] [cursor=pointer]:
+                - /url: https://practicetestautomation.com/contact/
+    - main [ref=e29]:
+      - generic [ref=e30]:
+        - heading "Test Exceptions" [level=2] [ref=e31]
+        - paragraph [ref=e32]:
+          - text: "This page is created to be able to reproduce the most common Selenium Exceptions. Follow test cases below to see exactly how to get: ElementNotInteractableException, ElementNotVisibleException, NoSuchElementException and StaleElementReferenceException. If you want to learn how to deal with these exceptions in your tests, check out my"
+          - link "Selenium WebDriver with Java for beginners program" [ref=e33] [cursor=pointer]:
+            - /url: https://practicetestautomation.com/beginners-course-coupon
+          - text: .
+        - heading "Create list of your favorite foods" [level=5] [ref=e34]
+        - generic [ref=e36]:
+          - generic [ref=e38]:
+            - text: Row 1
+            - textbox [disabled] [ref=e39]: Pizza
+          - generic [ref=e90]: Loading…
+          - generic [ref=e42]: Row 2 was added
+        - separator [ref=e43]
+        - 'heading "Test case 1: NoSuchElementException" [level=5] [ref=e44]'
+        - list [ref=e45]:
+          - listitem [ref=e46]: Open page
+          - listitem [ref=e47]: Click Add button
+          - listitem [ref=e48]: Verify Row 2 input field is displayed
+        - paragraph [ref=e49]: Row 2 doesn’t appear immediately. This test will fail with org.openqa.selenium.NoSuchElementException without proper wait
+        - separator [ref=e50]
+        - 'heading "Test case 2: ElementNotInteractableException" [level=5] [ref=e51]'
+        - list [ref=e52]:
+          - listitem [ref=e53]: Open page
+          - listitem [ref=e54]: Click Add button
+          - listitem [ref=e55]: Wait for the second row to load
+          - listitem [ref=e56]: Type text into the second input field
+          - listitem [ref=e57]: Push Save button using locator By.name(“Save”)
+          - listitem [ref=e58]: Verify text saved
+        - paragraph [ref=e59]:
+          - text: This page contains two elements with attribute name=”Save”.
+          - text: The first one is invisible. So when we are trying to click on the invisible element, we get ElementNotInteractableException.
+        - paragraph [ref=e60]: The same action used to throw ElementNotVisibleException, but now it throws a different exception (not sure if it’s a bug in Selenium or a feature)
+        - separator [ref=e61]
+        - 'heading "Test case 3: InvalidElementStateException" [level=5] [ref=e62]'
+        - list [ref=e63]:
+          - listitem [ref=e64]: Open page
+          - listitem [ref=e65]: Clear input field
+          - listitem [ref=e66]: Type text into the input field
+          - listitem [ref=e67]: Verify text changed
+        - paragraph [ref=e68]: The input field is disabled. Trying to clear the disabled field will throw InvalidElementStateException. We need to enable editing of the input field first by clicking the Edit button.
+        - paragraph [ref=e69]: If we try to type text into the disabled input field, we will get ElementNotInteractableException, as in Test case 2.
+        - separator [ref=e70]
+        - 'heading "Test case 4: StaleElementReferenceException" [level=5] [ref=e71]'
+        - list [ref=e72]:
+          - listitem [ref=e73]: Open page
+          - listitem [ref=e74]: Find the instructions text element
+          - listitem [ref=e75]: Push add button
+          - listitem [ref=e76]: Verify instruction text element is no longer displayed
+        - paragraph [ref=e77]: The instructions element is removed from the page when the second row is added. That’s why we can no longer interact with it. Otherwise, we will see StaleElementReferenceException.
+        - separator [ref=e78]
+        - 'heading "Test case 5: TimeoutException" [level=5] [ref=e79]'
+        - list [ref=e80]:
+          - listitem [ref=e81]: Open page
+          - listitem [ref=e82]: Click Add button
+          - listitem [ref=e83]: Wait for 3 seconds for the second input field to be displayed
+          - listitem [ref=e84]: Verify second input field is displayed
+        - paragraph [ref=e85]: The second row shows up after about 5 seconds, so a 3-second timeout is not enough. That’s why we will get TimeoutException while executing steps in the above test case.
+    - contentinfo:
+      - generic [ref=e87]:
+        - text: © Copyright 2020
+        - link "Practice Test Automation." [ref=e88] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/
+        - text: All rights reserved |
+        - link "Privacy Policy" [ref=e89] [cursor=pointer]:
+          - /url: https://practicetestautomation.com/privacy-policy/

@@ -1,0 +1,4 @@
+[     890ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ https://practicetestautomation.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1:1
+[     899ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://practicetestautomation.com/practice-test-login/:0
+[   17649ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ https://practicetestautomation.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1:1
+[   26479ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ https://practicetestautomation.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1:1
