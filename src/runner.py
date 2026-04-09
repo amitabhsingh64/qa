@@ -209,9 +209,9 @@ async def run_qa_loop(
         print()
 
     orchestrator_skills = _load_skills("orchestrator")
-    orchestrator_max_iter = _load_agent("orchestrator")["manifest"].get(
-        "max_iterations", _DEFAULT_MAX_ITER
-    )
+    orchestrator_manifest = _load_agent("orchestrator")["manifest"]
+    orchestrator_max_iter = orchestrator_manifest.get("max_iterations", _DEFAULT_MAX_ITER)
+    orchestrator_max_tokens = orchestrator_manifest.get("max_output_tokens", 16384)
     initial_message = build_orchestrator_prompt(url, prd_content)
 
     messages: list[dict] = [
@@ -231,7 +231,7 @@ async def run_qa_loop(
             modelId=model_name,
             system=[{"text": orchestrator_skills}],
             messages=messages,
-            inferenceConfig={"maxTokens": 4096, "temperature": 1.0},
+            inferenceConfig={"maxTokens": orchestrator_max_tokens, "temperature": 1.0},
             toolConfig={"tools": [INVOKE_AGENT_TOOL]},
         )
 
@@ -274,6 +274,41 @@ async def run_qa_loop(
             final_text = text_content
             break
 
+        if stop_reason == "max_tokens":
+            # Orchestrator ran out of output tokens mid-response.
+            # Any tool calls in this message are incomplete — Bedrock may have
+            # truncated the tool input JSON, so required fields may be missing.
+            # Feed back an error so the orchestrator can retry with a shorter brief.
+            if verbose:
+                print(
+                    f"\n  WARNING: orchestrator hit max_tokens at iteration {iteration}. "
+                    f"Tool input may be truncated. Feeding error back.\n"
+                )
+            error_blocks: list[dict] = []
+            for tool_use in tool_use_blocks:
+                error_blocks.append({
+                    "toolResult": {
+                        "toolUseId": tool_use["toolUseId"],
+                        "content": [{"text": json.dumps({
+                            "status": "error",
+                            "error": "orchestrator_max_tokens",
+                            "message": (
+                                "Your response was cut off because it exceeded the output "
+                                "token limit. The mission_brief you were writing is too long. "
+                                "Retry with a shorter brief: summarise the input data instead "
+                                "of copying it verbatim, or split into multiple invoke_agent calls."
+                            ),
+                        })}],
+                        "status": "error",
+                    }
+                })
+            if error_blocks:
+                messages.append({"role": "user", "content": error_blocks})
+                continue
+            # No tool calls at all — treat as end of turn
+            final_text = text_content
+            break
+
         if not tool_use_blocks:
             final_text = text_content
             break
@@ -284,8 +319,30 @@ async def run_qa_loop(
             if tool_use["name"] != "invoke_agent":
                 result_text = f"[ERROR] Orchestrator called unexpected tool '{tool_use['name']}'. Only invoke_agent is allowed."
             else:
-                agent_id = tool_use["input"]["agent_id"]
-                mission_brief = tool_use["input"]["mission_brief"]
+                agent_id = tool_use["input"].get("agent_id", "")
+                mission_brief = tool_use["input"].get("mission_brief", "")
+                if not agent_id or not mission_brief:
+                    result_text = json.dumps({
+                        "status": "error",
+                        "error": "malformed_tool_input",
+                        "message": (
+                            "invoke_agent call is missing required fields. "
+                            f"Got keys: {list(tool_use['input'].keys())}. "
+                            "Both 'agent_id' and 'mission_brief' are required."
+                        ),
+                    })
+                    conversation_log.append({
+                        "role": "sub_agent_result",
+                        "agent_id": agent_id or "unknown",
+                        "result_preview": result_text,
+                    })
+                    tool_result_blocks.append({
+                        "toolResult": {
+                            "toolUseId": tool_use["toolUseId"],
+                            "content": [{"text": result_text}],
+                        }
+                    })
+                    continue
 
                 # ----------------------------------------------------------
                 # Retry budget enforcement
@@ -419,10 +476,12 @@ async def run_sub_agent(
 
     Returns the sub-agent's final text output (structured JSON expected).
     """
-    agent_data  = _load_agent(agent_id)
-    skills      = agent_data["skills"]
-    max_iter    = agent_data["manifest"].get("max_iterations", _DEFAULT_MAX_ITER)
-    agent_tools = _filter_tools(agent_id, all_mcp_tools)
+    agent_data      = _load_agent(agent_id)
+    skills          = agent_data["skills"]
+    manifest        = agent_data["manifest"]
+    max_iter        = manifest.get("max_iterations", _DEFAULT_MAX_ITER)
+    max_out_tokens  = manifest.get("max_output_tokens", 8192)
+    agent_tools     = _filter_tools(agent_id, all_mcp_tools)
 
     messages: list[dict] = [
         {"role": "user", "content": [{"text": mission_brief}]}
@@ -461,7 +520,7 @@ async def run_sub_agent(
                 modelId=model_name,
                 system=[{"text": skills}],
                 messages=messages,
-                inferenceConfig={"maxTokens": 8192, "temperature": 1.0},
+                inferenceConfig={"maxTokens": max_out_tokens, "temperature": 1.0},
             )
             if tool_config:
                 call_kwargs["toolConfig"] = tool_config
@@ -530,6 +589,7 @@ async def run_sub_agent(
                 bedrock_client=bedrock_client,
                 model_name=model_name,
                 token_usage=token_usage,
+                max_output_tokens=max_out_tokens,
             )
     except BedrockReadTimeout as exc:
         inv_status = "error"
@@ -587,6 +647,7 @@ async def _request_cap_summary(
     bedrock_client,
     model_name: str,
     token_usage: TokenUsage,
+    max_output_tokens: int = 8192,
 ) -> tuple[str, dict]:
     """
     Called when a sub-agent hits its iteration cap.
@@ -629,7 +690,7 @@ async def _request_cap_summary(
         modelId=model_name,
         system=[{"text": skills}],
         messages=summary_messages,
-        inferenceConfig={"maxTokens": 8192, "temperature": 0.0},
+        inferenceConfig={"maxTokens": max_output_tokens, "temperature": 0.0},
         # No toolConfig — agent must respond with text only
     )
     token_usage.add(response.get("usage"), agent_id=agent_id)

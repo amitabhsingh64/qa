@@ -5,6 +5,7 @@
   "type": "sub-agent",
   "trigger": "on_demand",
   "max_iterations": 50,
+  "max_output_tokens": 8192,
   "requires_tools": [
     "browser_navigate",
     "browser_snapshot",

@@ -5,6 +5,7 @@
   "type": "sub-agent",
   "trigger": "post_execution",
   "max_iterations": 5,
+  "max_output_tokens": 8192,
   "requires_tools": [],
   "model_tier": "sub",
   "input_format": "mission_brief_markdown",
