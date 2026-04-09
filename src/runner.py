@@ -590,6 +590,7 @@ async def run_sub_agent(
                 model_name=model_name,
                 token_usage=token_usage,
                 max_output_tokens=max_out_tokens,
+                tool_config=tool_config,
             )
     except BedrockReadTimeout as exc:
         inv_status = "error"
@@ -648,6 +649,7 @@ async def _request_cap_summary(
     model_name: str,
     token_usage: TokenUsage,
     max_output_tokens: int = 8192,
+    tool_config: dict | None = None,
 ) -> tuple[str, dict]:
     """
     Called when a sub-agent hits its iteration cap.
@@ -686,13 +688,19 @@ async def _request_cap_summary(
         {"role": "user", "content": [{"text": cap_prompt}]}
     ]
 
-    response = bedrock_client.converse(
+    cap_call_kwargs: dict = dict(
         modelId=model_name,
         system=[{"text": skills}],
         messages=summary_messages,
         inferenceConfig={"maxTokens": max_output_tokens, "temperature": 0.0},
-        # No toolConfig — agent must respond with text only
     )
+    # Bedrock requires toolConfig whenever any message in the history contains
+    # toolUse or toolResult blocks — pass it through even though the cap prompt
+    # instructs the model not to call any tools.
+    if tool_config:
+        cap_call_kwargs["toolConfig"] = tool_config
+
+    response = bedrock_client.converse(**cap_call_kwargs)
     token_usage.add(response.get("usage"), agent_id=agent_id)
 
     raw = ""
