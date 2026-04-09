@@ -1,21 +1,22 @@
 {
   "id": "crawler",
   "name": "Site Crawler",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "sub-agent",
   "trigger": "on_demand",
-  "max_iterations": 50,
-  "max_output_tokens": 8192,
+  "max_iterations": 60,
+  "max_output_tokens": 16384,
   "requires_tools": [
     "browser_navigate",
     "browser_snapshot",
     "browser_click",
     "browser_screenshot",
     "browser_console_messages",
-    "browser_network_requests"
+    "browser_network_requests",
+    "browser_run_code"
   ],
   "model_tier": "sub",
   "input_format": "mission_brief_markdown",
   "output_format": "site_map_json",
-  "description": "Systematically maps a website: all pages, forms, auth walls, tech stack, nav graph."
+  "description": "Maps a website: pages (with page_type, priority, a11y hints, compat hints), forms (expanded schema), auth walls, tech stack, templates, and discovery notes."
 }

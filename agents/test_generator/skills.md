@@ -20,9 +20,24 @@ pillars. Your test plan should achieve coverage across all four — not just the
 
 Your mission brief from the orchestrator contains:
 
-1. **`site_map`** — Full JSON from the Crawler. Contains pages, forms, auth walls,
-   tech stack, API endpoints, nav links. This is your ground truth for what exists
-   on the site.
+1. **`site_map`** — Full JSON from the Crawler. The enriched v2 schema includes:
+   - `pages[]` — each page now has `page_type`, `priority`, `accessibility_hints`,
+     and `compatibility_hints`. Use `priority` to sequence your test plan: test
+     `critical` pages first, then `high`, then `normal`, then `low`.
+   - `forms[]` — expanded schema with `fields[].input_type`, `fields[].required`,
+     `fields[].has_label`, `submit_button_text`, and `submits_to`. Use these to
+     plan precise validation tests rather than guessing field types.
+   - `accessibility_hints` per page — `images_missing_alt`, `inputs_missing_labels`,
+     `has_lang_attribute`, `landmark_regions`. Use these as your starting points for
+     the accessibility pillar. Pages with `images_missing_alt > 0` need alt text
+     tests; pages with `inputs_missing_labels > 0` need label tests.
+   - `compatibility_hints` per page — `has_viewport_meta`, `js_required_for_content`,
+     `uses_iframes`. Use these for the compatibility and progressive enhancement pillars.
+   - `templates_detected[]` — page URL patterns that were de-duplicated. You only
+     need to test one sampled variant per template.
+   - `discovery_notes[]` — free-text observations from the Crawler. Read these first —
+     they flag cookie banners, auth bypasses, and other things you need to know before
+     testing.
 
 2. **`test_strategy`** — The orchestrator's instructions on scope: which flows to
    cover, what to prioritise, any specific concerns from the PRD. This may also
@@ -35,8 +50,11 @@ Your mission brief from the orchestrator contains:
 4. **`constraints`** (optional) — Auth credentials to use, paths to avoid,
    iteration budget limits, target browsers/viewports.
 
-Read the site map carefully before executing any tests. Match site map entries to
-heuristic categories across all four pillars, then execute in priority order.
+Read the site map carefully before executing any tests. Start with `discovery_notes`
+— they contain important context (cookie banners to dismiss, auth bypasses to verify,
+template patterns to avoid duplicating). Then use `page_type` and `priority` to
+sequence your test plan. Match site map entries to heuristic categories across all
+four pillars, then execute in priority order.
 
 ---
 
