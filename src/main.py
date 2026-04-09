@@ -66,15 +66,20 @@ async def main(
             print(f"Loaded PRD: {prd_path} ({len(prd_content)} chars)")
 
     # ------------------------------------------------------------------
-    # Prepare output directory
+    # Prepare output directory — one timestamped subfolder per run
+    # e.g. sessions/20260409_110059_practicetestautomation/
     # ------------------------------------------------------------------
-    out_dir = Path(output_dir)
+    start_time = datetime.now(timezone.utc)
+    from urllib.parse import urlparse
+    _host = urlparse(url).hostname or "site"
+    _host_slug = _host.replace(".", "-").replace("www-", "")[:30]
+    session_name = f"{start_time.strftime('%Y%m%d_%H%M%S')}_{_host_slug}"
+    out_dir = Path(output_dir) / session_name
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------
     # Print session header
     # ------------------------------------------------------------------
-    start_time = datetime.now(timezone.utc)
     print()
     print("=" * 60)
     print("  Autonomous QA — AWS Bedrock Converse API")
@@ -143,7 +148,7 @@ async def main(
         )
         sys.exit(1)
 
-    token_usage = TokenUsage(model=model_name)
+    token_usage = TokenUsage(model=model_name, sub_model=sub_model_name)
 
     # ------------------------------------------------------------------
     # Launch Playwright MCP and run the agentic loop

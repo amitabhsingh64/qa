@@ -10,17 +10,25 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-# Pricing per million tokens (USD) via AWS Bedrock on-demand
-# Matches both bare IDs and cross-region inference profile IDs (us./eu./global. prefix)
+# Pricing per million tokens (USD) via AWS Bedrock on-demand.
+# More specific keys must come before general ones — lookup stops at first match.
+# Covers bare IDs and cross-region inference profile IDs (us./eu./global. prefix).
 _BEDROCK_PRICING: dict[str, tuple[float, float]] = {
-    "claude-3-5-sonnet-20241022-v2": (3.00,  15.00),
-    "claude-3-5-haiku-20241022-v1":  (0.80,   4.00),
-    "claude-3-opus-20240229-v1":     (15.00, 75.00),
-    "claude-3-sonnet-20240229-v1":   (3.00,  15.00),
-    "claude-3-haiku-20240307-v1":    (0.25,   1.25),
-    "claude-opus-4":                 (15.00, 75.00),
-    "claude-sonnet-4":               (3.00,  15.00),
-    "claude-haiku-4":                (0.80,   4.00),
+    # Claude 4.x — input / output per million tokens
+    "claude-opus-4-6":   (5.00,  25.00),
+    "claude-opus-4-5":   (5.00,  25.00),
+    "claude-opus-4":     (5.00,  25.00),
+    "claude-sonnet-4-6": (3.00,  15.00),
+    "claude-sonnet-4-5": (3.00,  15.00),
+    "claude-sonnet-4":   (3.00,  15.00),
+    "claude-haiku-4-5":  (1.00,   5.00),
+    "claude-haiku-4":    (1.00,   5.00),
+    # Claude 3.x
+    "claude-3-5-sonnet": (3.00,  15.00),
+    "claude-3-5-haiku":  (0.80,   4.00),
+    "claude-3-opus":     (15.00, 75.00),
+    "claude-3-sonnet":   (3.00,  15.00),
+    "claude-3-haiku":    (0.25,   1.25),
 }
 _DEFAULT_PRICING = (3.00, 15.00)  # fall back to Sonnet-class pricing
 
@@ -42,13 +50,18 @@ class TokenUsage:
     - Invocations: one record per sub-agent run with timing, status, and token delta
     """
 
-    def __init__(self, model: str = "") -> None:
+    def __init__(self, model: str = "", sub_model: str = "") -> None:
         self.model = model
+        self.sub_model = sub_model or model
         self.input_tokens: int = 0
         self.output_tokens: int = 0
-        pricing = _lookup_pricing(model)
-        self._cost_per_m_input  = pricing[0]
-        self._cost_per_m_output = pricing[1]
+        # Orchestrator uses primary model pricing; sub-agents use sub_model pricing
+        main_pricing = _lookup_pricing(model)
+        self._cost_per_m_input  = main_pricing[0]
+        self._cost_per_m_output = main_pricing[1]
+        sub_pricing = _lookup_pricing(self.sub_model)
+        self._sub_cost_per_m_input  = sub_pricing[0]
+        self._sub_cost_per_m_output = sub_pricing[1]
 
         # Per-agent aggregate: {agent_id: {"input": N, "output": N}}
         self._breakdown: dict[str, dict[str, int]] = {}
@@ -197,17 +210,25 @@ class TokenUsage:
     @property
     def estimated_cost_usd(self) -> float:
         return round(
-            (self.input_tokens  / 1_000_000) * self._cost_per_m_input
-            + (self.output_tokens / 1_000_000) * self._cost_per_m_output,
+            sum(self.agent_cost_usd(aid) for aid in self._breakdown),
             6,
         )
 
     def agent_cost_usd(self, agent_id: str) -> float:
-        """Return estimated USD cost for a single agent's aggregate token usage."""
+        """Return estimated USD cost for a single agent's aggregate token usage.
+
+        Orchestrator is billed at primary model rates; all sub-agents at sub_model rates.
+        """
         entry = self._breakdown.get(agent_id, {"input": 0, "output": 0})
+        if agent_id == "orchestrator":
+            inp_rate = self._cost_per_m_input
+            out_rate = self._cost_per_m_output
+        else:
+            inp_rate = self._sub_cost_per_m_input
+            out_rate = self._sub_cost_per_m_output
         return round(
-            (entry["input"]  / 1_000_000) * self._cost_per_m_input
-            + (entry["output"] / 1_000_000) * self._cost_per_m_output,
+            (entry["input"]  / 1_000_000) * inp_rate
+            + (entry["output"] / 1_000_000) * out_rate,
             6,
         )
 
@@ -274,8 +295,16 @@ class TokenUsage:
             "total_tokens":        self.total_tokens,
             "estimated_cost_usd":  self.estimated_cost_usd,
             "pricing": {
-                "input_per_M_usd":  self._cost_per_m_input,
-                "output_per_M_usd": self._cost_per_m_output,
+                "orchestrator": {
+                    "model":           self.model,
+                    "input_per_M_usd": self._cost_per_m_input,
+                    "output_per_M_usd": self._cost_per_m_output,
+                },
+                "sub_agents": {
+                    "model":           self.sub_model,
+                    "input_per_M_usd": self._sub_cost_per_m_input,
+                    "output_per_M_usd": self._sub_cost_per_m_output,
+                },
             },
             "breakdown_by_agent":  breakdown_with_cost,
             "retry_summary":       self.compute_retry_summary(),
