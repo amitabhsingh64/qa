@@ -131,7 +131,7 @@ async def main(
             config=BotocoreConfig(
                 read_timeout=300,   # 5 min — long enough for large model responses
                 connect_timeout=10,
-                retries={"max_attempts": 8, "mode": "adaptive"},
+                retries={"max_attempts": 20, "mode": "adaptive"},
             ),
         )
     except NoCredentialsError:
