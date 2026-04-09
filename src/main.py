@@ -152,8 +152,11 @@ async def main(
     if headless:
         playwright_args.append("--headless")
 
+    # On Windows, npm/npx are .cmd wrappers — subprocess can't find plain "npx"
+    npx_cmd = "npx.cmd" if sys.platform == "win32" else "npx"
+
     server_params = StdioServerParameters(
-        command="npx",
+        command=npx_cmd,
         args=playwright_args,
         env=None,
     )

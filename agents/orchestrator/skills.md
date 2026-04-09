@@ -94,23 +94,33 @@ Test every area of the site the crawler discovered. Prioritise:
 {PRD content or "Not provided"}
 
 ## Expected Output
-Return findings JSON:
+Return findings JSON with this exact schema:
 {
-  "summary": {"pages_tested": N, "tests_executed": N, "issues_found": N, "tech_stack": [...]},
+  "status": "complete",
+  "session_summary": {
+    "tests_attempted": <integer>,
+    "pages_tested": <integer>,
+    "tech_stack_observed": ["React", "..."]
+  },
   "findings": [
     {
-      "id": "F001",
-      "severity": "critical|high|medium|low|info",
-      "category": "auth|navigation|forms|checkout|search|security|ux|console|content",
-      "title": "...",
-      "description": "...",
-      "reproduction_steps": ["..."],
-      "expected": "...",
-      "actual": "...",
-      "url": "..."
+      "id": "f001",
+      "test_name": "Short descriptive name of the test",
+      "category": "functional|boundary|security|navigation|performance|ux|console",
+      "feature": "authentication|forms|search|navigation|cart|checkout|content|api|other",
+      "page": "/the/url/tested",
+      "steps_taken": ["Navigated to /login", "Entered email: test@example.com", "..."],
+      "expected": "What should have happened",
+      "observed": "What actually happened — specific and detailed",
+      "evidence": {
+        "screenshots": [],
+        "console_messages": [],
+        "network_errors": []
+      },
+      "preliminary_status": "likely_pass|likely_fail|inconclusive|error",
+      "notes": "Any extra context or caveats"
     }
-  ],
-  "pages_tested": [{"url": "...", "title": "...", "status": 200, "console_errors": 0}]
+  ]
 }
 ```
 

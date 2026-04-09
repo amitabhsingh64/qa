@@ -15,7 +15,9 @@
     "browser_console_messages",
     "browser_network_requests",
     "browser_evaluate",
-    "browser_run_code"
+    "browser_run_code",
+    "browser_resize",
+    "browser_press_key"
   ],
   "model_tier": "sub",
   "input_format": "mission_brief_markdown",
